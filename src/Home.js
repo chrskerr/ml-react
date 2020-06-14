@@ -65,20 +65,18 @@ export default function Home () {
 				</div>
 			</div>
 
-			{ loading && 
+			{ ( loading || !version ) ? 
 				<div className="loader">
 					<FontAwesomeIcon icon={ faSpinner } spin size="3x" />
-				</div> 
-			}
-
-			{ ( !loading && !_.isEmpty( instrumentsVersionsPredictions )) &&
-				<div className="chart">
-					<Chart data={ instrumentsVersionsPredictions } />
-				</div> 
-			}
-
-			{ ( !loading && _.isEmpty( instrumentsVersionsPredictions )) &&
-				<p>Nothing to display - change a filter!</p>
+				</div>
+				:
+				<>{ !_.isEmpty( instrumentsVersionsPredictions ) ?
+					<div className="chart">
+						<Chart data={ instrumentsVersionsPredictions } />
+					</div> 
+					:
+					<p>Nothing to display - change a filter!</p>
+				}</>
 			}
 		</div>
 	);
