@@ -163,12 +163,13 @@ body {
             }
 
             .stats {
-                width: 44em;
+                width: 100%;
                 margin-bottom: 2em;
 
                 .stats-row {
-                    display: flex; flex-direction: row;
-                    align-items: center;
+                    // display: flex; flex-direction: row;
+                    // align-items: center;
+                    // width: 100%;
                     
                     .stats-col {
                         display: flex; flex-direction: row;

@@ -6,8 +6,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 import gql from "graphql-tag";
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from "recharts";
-import { linearRegression, linearRegressionLine, min, max } from "simple-statistics";
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart, Line, ReferenceLine } from "recharts";
+import { linearRegression, linearRegressionLine, min, max, mean, standardDeviation } from "simple-statistics";
 
 const GET_VERSIONS = gql`
 query GetVersions {
@@ -136,36 +136,33 @@ DotChart.propTypes = {
 };
 
 const DistributionChart = memo( function DistributionChart ({ data }) {
-	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
-
 	const numberOfIntervals = 20;
-
-	const smallest = min( variations );
-	const largest = max( variations );
-	const range = Math.abs( smallest - largest );
+    
+	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
+	const range = 2 * max([ 0 - min( variations ), max( variations ) ]);
 	const intervalLength = range / numberOfIntervals; 
     
-	const graphData = _.map( _.range( 0, numberOfIntervals ), i => {
-		const bottom = Number(( smallest + intervalLength * i ).toFixed( 5 ));
-		const middle = Number(( smallest + intervalLength * ( i + 0.5 )).toFixed( 5 ));
-		const top = Number(( smallest + intervalLength * ( i + 1 )).toFixed( 5 )); 
+	const start = range / 2 * -1;
+
+	const graphData = _.map( _.range( 0, numberOfIntervals + 1 ), i => {
+		const bottom = Number(( start + intervalLength * ( i - 0.5 )).toFixed( 5 ));
+		const middle = Number(( start + intervalLength * ( i )).toFixed( 5 ));
+		const top = Number(( start + intervalLength * ( i + 0.5 )).toFixed( 5 )); 
 		const matchedVariations = _.filter( variations, variation => variation > bottom && variation <= top );
-		return { 
-			name: middle,
-			value: _.size( matchedVariations ),
-		};
+		return { name: middle, value: _.size( matchedVariations ) };
 	});
-    
+        
 	return (
 		<>
 			<h3>Variations distribution</h3>
 			<ResponsiveContainer>
-				<LineChart data={graphData} margin={{ top: 20, bottom: 20, left: -25 }} >
+				<ComposedChart data={ graphData } margin={{ top: 20, bottom: 20, left: -25 }} >
 					<XAxis dataKey="name" />
 					<YAxis dataKey="value" />
 					<Tooltip />
-					<Line type="monotone" dataKey="value" stroke="#82ca9d" dot={ false } />
-				</LineChart>
+					<Line type="natural" dataKey="value" stroke="#82ca9d" dot={ false } />
+					<ReferenceLine x={ 0 } stroke="#e16162" label="Zero" />
+				</ComposedChart>
 			</ResponsiveContainer>
 		</>
 	);
@@ -176,6 +173,16 @@ DistributionChart.propTypes = {
 
 const Stats = ({ data }) => {
 	const sampleCount = _.size( data );
+    
+	const correctSamples = _.filter( data, ({ actual, prediction }) => ( actual > 0 && prediction > 0 ) || ( actual < 0 && prediction < 0 ));
+	const percDirectionCorrect = 100 * _.size( correctSamples ) / sampleCount;
+    
+	const correctSamplesWithPredictedLessThanActual = _.filter( correctSamples, ({ actual, prediction }) => Math.abs( actual ) >= Math.abs( prediction ));
+	const percOfCorrectSamplesWithPredictedLessThanActual = 100 * _.size( correctSamplesWithPredictedLessThanActual ) / sampleCount;
+
+	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
+	const sampleMean = mean( variations );
+	const sampleStandardDev = standardDeviation( variations );
 
 	return (
 		<>
@@ -184,6 +191,22 @@ const Stats = ({ data }) => {
 				<div className="stats-col">
 					<h5>Number of Samples:</h5>
 					<p>{ sampleCount }</p>
+				</div>
+				<div className="stats-col">
+					<h5>Sample mean:</h5>
+					<p>{ ( sampleMean ).toFixed( 5 ) }</p>
+				</div>
+				<div className="stats-col">
+					<h5>Sample Standard Deviation (have not checked if curve is normal..):</h5>
+					<p>{ ( sampleStandardDev ).toFixed( 5 ) }</p>
+				</div>
+				<div className="stats-col">
+					<h5>Percentage of all predictions which got the direction correct:</h5>
+					<p>{ percDirectionCorrect.toFixed( 1 ) }%</p>
+				</div>
+				<div className="stats-col">
+					<h5>Percentage of direction-correct predictions which did not overestimate the actual outcome:</h5>
+					<p>{ percOfCorrectSamplesWithPredictedLessThanActual.toFixed( 1 ) }%</p>
 				</div>
 			</div>
 		</>
