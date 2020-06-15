@@ -166,17 +166,17 @@ body {
                 width: 100%;
                 margin-bottom: 2em;
 
-                .stats-row {
-                    // display: flex; flex-direction: row;
-                    // align-items: center;
-                    // width: 100%;
-                    
-                    .stats-col {
-                        display: flex; flex-direction: row;
-                        align-items: center;
+                table {
+                    border-collapse: collapse;
 
-                        h5, p {
-                            margin: 0 1em 0 0;
+                    tr {
+                        td:first-child {
+                            color: white;
+                            padding-right: 2em;
+                        }
+
+                        td:last-child {
+                            color: $paragraph;
                         }
                     }
                 }

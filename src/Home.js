@@ -187,28 +187,28 @@ const Stats = ({ data }) => {
 	return (
 		<>
 			<h3>Basic Stats</h3>
-			<div className="stats-row">
-				<div className="stats-col">
-					<h5>Number of Samples:</h5>
-					<p>{ sampleCount }</p>
-				</div>
-				<div className="stats-col">
-					<h5>Sample mean:</h5>
-					<p>{ ( sampleMean ).toFixed( 5 ) }</p>
-				</div>
-				<div className="stats-col">
-					<h5>Sample Standard Deviation (have not checked if curve is normal..):</h5>
-					<p>{ ( sampleStandardDev ).toFixed( 5 ) }</p>
-				</div>
-				<div className="stats-col">
-					<h5>Percentage of all predictions which got the direction correct:</h5>
-					<p>{ percDirectionCorrect.toFixed( 1 ) }%</p>
-				</div>
-				<div className="stats-col">
-					<h5>Percentage of direction-correct predictions which did not overestimate the actual outcome:</h5>
-					<p>{ percOfCorrectSamplesWithPredictedLessThanActual.toFixed( 1 ) }%</p>
-				</div>
-			</div>
+			<table>
+				<tr>
+					<td>Number of Samples:</td>
+					<td>{ sampleCount }</td>
+				</tr>
+				<tr>
+					<td>Sample mean:</td>
+					<td>{ ( sampleMean ).toFixed( 5 ) }</td>
+				</tr>
+				<tr>
+					<td>Sample Standard Deviation (have not checked if curve is normal..):</td>
+					<td>{ ( sampleStandardDev ).toFixed( 5 ) }</td>
+				</tr>
+				<tr>
+					<td>Percentage of all predictions which got the direction correct:</td>
+					<td>{ percDirectionCorrect.toFixed( 1 ) }%</td>
+				</tr>
+				<tr>
+					<td>Percentage of direction-correct predictions which did not overestimate the actual outcome:</td>
+					<td>{ percOfCorrectSamplesWithPredictedLessThanActual.toFixed( 1 ) }%</td>
+				</tr>
+			</table>
 		</>
 	);
 };
