@@ -98,7 +98,7 @@ export default function Home () {
 }
 
 const DotChart = memo( function DotChart ({ data }) {
-	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: ( actual * 100 ).toFixed( 4 ), prediction: ( prediction * 100 ).toFixed( 4 ) }));
+	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual * 100 ).toFixed( 4 )), prediction: Number(( prediction * 100 ).toFixed( 4 )) }));
 	const regressionData = _.map( data, ({ actual, prediction }) => ([ actual * 100, prediction * 100 ]));
 
 	const largestVal = _.reduce( graphData, ( total, current ) => {
@@ -114,6 +114,11 @@ const DotChart = memo( function DotChart ({ data }) {
 		{ actual: domain[ 0 ], prediction: regressionLineFunc( domain[ 0 ]) },
 		{ actual: domain[ 1 ], prediction: regressionLineFunc( domain[ 1 ]) },
 	];
+    
+	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
+	const negActualsStDev = actualsStDev * -1;
+    
+	console.log( graphData, actualsStDev );
 
 	return (
 		<>
@@ -126,6 +131,10 @@ const DotChart = memo( function DotChart ({ data }) {
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
 					<Scatter data={ graphData } fill="#82ca9d" shape="triangle" />
 					<Scatter line={{ stroke: "#e16162", strokeWidth: 1 }} data={ regressionLine } shape="circle" fill="#e16162" />
+					<ReferenceLine x={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
+					<ReferenceLine x={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
+					<ReferenceLine y={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideTopLeft" }} />
+					<ReferenceLine y={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideTopLeft" }} />
 				</ScatterChart>
 			</ResponsiveContainer>
 		</>
@@ -138,7 +147,7 @@ DotChart.propTypes = {
 const DistributionChart = memo( function DistributionChart ({ data }) {
 	const numberOfIntervals = 20;
     
-	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
+	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 ) * 100 ));
 	const range = 2 * max([ 0 - min( variations ), max( variations ) ]);
 	const intervalLength = range / numberOfIntervals; 
     
@@ -161,7 +170,7 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 					<YAxis dataKey="value" />
 					<Tooltip />
 					<Line type="natural" dataKey="value" stroke="#82ca9d" dot={ false } />
-					<ReferenceLine x={ 0 } stroke="#e16162" label="Zero" />
+					<ReferenceLine x={ 0 } stroke="#C98BBE" label={{ value: "0", position: "insideBottomRight" }} />
 				</ComposedChart>
 			</ResponsiveContainer>
 		</>
@@ -174,40 +183,56 @@ DistributionChart.propTypes = {
 const Stats = ({ data }) => {
 	const sampleCount = _.size( data );
     
-	const correctSamples = _.filter( data, ({ actual, prediction }) => ( actual > 0 && prediction > 0 ) || ( actual < 0 && prediction < 0 ));
-	const percDirectionCorrect = 100 * _.size( correctSamples ) / sampleCount;
+	const actualsStDev = standardDeviation( _.map( data, "actual" ));
+	const negActualsStDev = actualsStDev * -1;
     
-	const correctSamplesWithPredictedLessThanActual = _.filter( correctSamples, ({ actual, prediction }) => Math.abs( actual ) >= Math.abs( prediction ));
-	const percOfCorrectSamplesWithPredictedLessThanActual = 100 * _.size( correctSamplesWithPredictedLessThanActual ) / sampleCount;
+	const upwardSamples = _.filter( data, ({ actual }) => actual > actualsStDev );
+	const downwardSamples = _.filter( data, ({ actual }) => actual < negActualsStDev );
+	const flatSamples = _.filter( data, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev );
+
+	const upwardCorrect = _.filter( upwardSamples, ({ prediction }) => prediction > actualsStDev );
+	const downwardsCorrect = _.filter( downwardSamples, ({ prediction }) => prediction < actualsStDev );
+	const flatCorrect = _.filter( flatSamples, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev );
+    
+	const percUpwardCorrect = _.size( upwardCorrect ) / _.size( upwardSamples ) * 100;
+	const percDownwardsCorrect = _.size( downwardsCorrect ) / _.size( downwardSamples ) * 100;
+	const percFlatCorrect = _.size( flatCorrect ) / _.size( flatSamples ) * 100;
 
 	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
 	const sampleMean = mean( variations );
 	const sampleStandardDev = standardDeviation( variations );
 
+
 	return (
 		<>
 			<h3>Basic Stats</h3>
 			<table>
-				<tr>
-					<td>Number of Samples:</td>
-					<td>{ sampleCount }</td>
-				</tr>
-				<tr>
-					<td>Sample mean:</td>
-					<td>{ ( sampleMean ).toFixed( 5 ) }</td>
-				</tr>
-				<tr>
-					<td>Sample Standard Deviation (have not checked if curve is normal..):</td>
-					<td>{ ( sampleStandardDev ).toFixed( 5 ) }</td>
-				</tr>
-				<tr>
-					<td>Percentage of all predictions which got the direction correct:</td>
-					<td>{ percDirectionCorrect.toFixed( 1 ) }%</td>
-				</tr>
-				<tr>
-					<td>Percentage of direction-correct predictions which did not overestimate the actual outcome:</td>
-					<td>{ percOfCorrectSamplesWithPredictedLessThanActual.toFixed( 1 ) }%</td>
-				</tr>
+				<tbody>
+					<tr>
+						<td>Number of Samples:</td>
+						<td>{ sampleCount }</td>
+					</tr>
+					<tr>
+						<td>Sample mean:</td>
+						<td>{ ( sampleMean ).toFixed( 5 ) * 100 }</td>
+					</tr>
+					<tr>
+						<td>Sample Standard Deviation (have not checked if curve is normal..):</td>
+						<td>{ ( sampleStandardDev ).toFixed( 5 ) * 100 }</td>
+					</tr>
+					<tr>
+						<td>Percentage of samples which predicted up and were correct:</td>
+						<td>{ _.size( upwardCorrect ) } / { _.size( upwardSamples ) } = { percUpwardCorrect.toFixed( 1 ) }%</td>
+					</tr>
+					<tr>
+						<td>Percentage of samples which predicted downward and were correct:</td>
+						<td>{ _.size( downwardsCorrect ) } / { _.size( downwardSamples ) } = { percDownwardsCorrect.toFixed( 1 ) }%</td>
+					</tr>
+					<tr>
+						<td>Percentage of samples which predicted flat and were correct:</td>
+						<td>{ _.size( flatCorrect ) } / { _.size( flatSamples ) } = { percFlatCorrect.toFixed( 1 ) }%</td>
+					</tr>
+				</tbody>
 			</table>
 		</>
 	);

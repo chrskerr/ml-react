@@ -37,6 +37,12 @@ body {
         fill: $paragraph;
         font-size: small;
     }
+
+    .recharts-reference-line {
+        text {
+            fill: #C98BBE;
+        }
+    }
     
     a {
         color: $secondary
