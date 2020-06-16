@@ -27,26 +27,25 @@ query GetPredictions ( $version: Int! ) {
 
 export default function Home () {
 	const [ instrument, setInstrument ] = useState( false );
-	const [ version, setVersion ] = useState( false );
+	const [ version, setVersion ] = useState( -1 );
     
 	const { data: versionsData } = useQuery( GET_VERSIONS );
 	const [ getPredictions, { data, loading }] = useLazyQuery( GET_PREDICTIONS );
 	// eslint-disable-next-line
 	useEffect(() => getPredictions({ variables: { version }}), [ version ]);
 
-	const allPredictions = _.get( data, "predictions" );
-	const versionsPredictions = _.filter( allPredictions, [ "_version", version ]);
+	const predictions = _.get( data, "predictions" );
 
 	const versions = _.map( _.get( versionsData, "versions" ), "id" );
 	// eslint-disable-next-line
-	useEffect(() => { if ( !version ) setVersion( Math.max( versions )); }, [ versions ]);
+	useEffect(() => { if ( version === -1 && !_.isEmpty( versions )) setVersion( max( versions )); }, [ versions ]);
 
-	const instruments = _.uniq( _.map( versionsPredictions, "instrument" ));
+	const instruments = _.uniq( _.map( predictions, "instrument" ));
 	// eslint-disable-next-line
 	useEffect(() => { if ( !instrument ) setInstrument( _.first( instruments ));}, [ instruments ]);
     
-	const instrumentsVersionsPredictions = _.filter( versionsPredictions, [ "instrument", instrument ]);
-
+	const instrumentsVersionsPredictions = _.filter( predictions, [ "instrument", instrument ]);
+    
 	return (
 		<div className="body">
 			<div className="header">
@@ -118,8 +117,6 @@ const DotChart = memo( function DotChart ({ data }) {
 	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
 	const negActualsStDev = actualsStDev * -1;
     
-	console.log( graphData, actualsStDev );
-
 	return (
 		<>
 			<h3>Predictions vs Actuals scatter</h3>
