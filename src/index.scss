@@ -187,7 +187,6 @@ body {
                     }
                 }
             }
-
         }
     }
 }
@@ -235,5 +234,25 @@ body {
             height: 22em !important;
         };
 
+        .stats {
+
+            table {
+
+                tr {
+
+                    td {
+                        padding-bottom: 0.5em;
+                    }
+
+                    td:first-child {
+                        width: 65%;
+                    }
+
+                    td:last-child {
+                        width: 35%;
+                    }
+                }
+            }
+        }
     }
 }

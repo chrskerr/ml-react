@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 import gql from "graphql-tag";
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart, Line, ReferenceLine } from "recharts";
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ComposedChart, Line, ReferenceLine } from "recharts";
 import { linearRegression, linearRegressionLine, min, max, mean, standardDeviation } from "simple-statistics";
 
 const GET_VERSIONS = gql`
@@ -97,7 +97,7 @@ export default function Home () {
 }
 
 const DotChart = memo( function DotChart ({ data }) {
-	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual * 100 ).toFixed( 4 )), prediction: Number(( prediction * 100 ).toFixed( 4 )) }));
+	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual * 100 ).toFixed( 4 )), prediction: Number(( prediction * 100 ).toFixed( 4 )), z: 1 }));
 	const regressionData = _.map( data, ({ actual, prediction }) => ([ actual * 100, prediction * 100 ]));
 
 	const largestVal = _.reduce( graphData, ( total, current ) => {
@@ -125,8 +125,9 @@ const DotChart = memo( function DotChart ({ data }) {
 					<CartesianGrid />
 					<XAxis type="number" dataKey="actual" name="actual" domain={ domain } label={{ value: "Actual Change (cents)", position: "bottom", offset: 0 }} />
 					<YAxis type="number" dataKey="prediction" name="prediction" domain={ domain } label={{ value: "Predicted Change (cents)", position: "centerBottom", angle: -90, offset: 5 }} />
+					<ZAxis dataKey="z" range={[ 1, 10 ]} />
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
-					<Scatter data={ graphData } fill="#82ca9d" shape="triangle" />
+					<Scatter data={ graphData } fill="#82ca9d" shape="circle" />
 					<Scatter line={{ stroke: "#e16162", strokeWidth: 1 }} data={ regressionLine } shape="circle" fill="#e16162" />
 					<ReferenceLine x={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
 					<ReferenceLine x={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
