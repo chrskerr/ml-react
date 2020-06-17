@@ -3,7 +3,7 @@ import React, { memo, useEffect, useState } from "react";
 import PropTypes from "proptypes";
 import { useQuery, useLazyQuery } from "@apollo/react-hooks";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faSpinner , faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 import gql from "graphql-tag";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ComposedChart, Line, ReferenceLine } from "recharts";
@@ -16,8 +16,8 @@ query GetVersions {
 `;
 
 const GET_PREDICTIONS = gql`
-query GetPredictions ( $version: Int! ) {
-    predictions ( where: { prediction: { _is_null: false }, actual: { _is_null: false }, _version: { _eq: $version }}) {
+query GetPredictions ( $version: Int!, $was_back_predicted: [Boolean!] ) {
+    predictions ( where: { prediction: { _is_null: false }, actual: { _is_null: false }, _version: { _eq: $version }, was_back_predicted: { _in: $was_back_predicted }}) {
         actual id time
         instrument
         prediction
@@ -28,11 +28,12 @@ query GetPredictions ( $version: Int! ) {
 export default function Home () {
 	const [ instrument, setInstrument ] = useState( false );
 	const [ version, setVersion ] = useState( -1 );
+	const [ includeBackPredicted, setIncludeBackPredicted ] = useState( true );
     
 	const { data: versionsData } = useQuery( GET_VERSIONS );
 	const [ getPredictions, { data, loading }] = useLazyQuery( GET_PREDICTIONS );
 	// eslint-disable-next-line
-	useEffect(() => getPredictions({ variables: { version }}), [ version ]);
+	useEffect(() => getPredictions({ variables: { version, was_back_predicted: includeBackPredicted ? [ true, false ] : [ false ] }}), [ version, includeBackPredicted ]);
 
 	const predictions = _.get( data, "predictions" );
 
@@ -44,7 +45,7 @@ export default function Home () {
 	// eslint-disable-next-line
 	useEffect(() => { if ( !instrument ) setInstrument( _.first( instruments ));}, [ instruments ]);
     
-	const instrumentsVersionsPredictions = _.filter( predictions, [ "instrument", instrument ]);
+	const filteredPredictions = _.filter( predictions, [ "instrument", instrument ]);
     
 	return (
 		<div className="body">
@@ -66,6 +67,10 @@ export default function Home () {
 						{ !_.isEmpty( instruments ) && _.map( instruments, instrument => <option key={ instrument } value={ instrument }>{ instrument }</option> ) }
 					</select>
 				</div>
+				<div onClick={ () => setIncludeBackPredicted( !includeBackPredicted ) }>
+					<p>Include back-predicted results</p>
+					{ includeBackPredicted ? <FontAwesomeIcon icon={ faCheck } /> : <FontAwesomeIcon icon={ faTimes } className="unchecked" /> }
+				</div>
 			</div>
 
 			{ ( loading || !version ) ? 
@@ -73,19 +78,19 @@ export default function Home () {
 					<FontAwesomeIcon icon={ faSpinner } spin size="3x" />
 				</div>
 				:
-				<>{ !_.isEmpty( instrumentsVersionsPredictions ) ?
+				<>{ !_.isEmpty( filteredPredictions ) ?
 					<div className="chart">
 						<hr />
 						<div className="stats">
-							<Stats data={ instrumentsVersionsPredictions } />
+							<Stats data={ filteredPredictions } />
 						</div>
 						<hr />
 						<div className="scatter">
-							<DotChart data={ instrumentsVersionsPredictions } />
+							<DotChart data={ filteredPredictions } />
 						</div>
 						<hr />
 						<div className="distribution">
-							<DistributionChart data={ instrumentsVersionsPredictions } />
+							<DistributionChart data={ filteredPredictions } />
 						</div>
 					</div> 
 					:

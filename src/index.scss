@@ -72,6 +72,23 @@ body {
                         margin-left: 2em !important;
                         font-size: 115%;
                     }
+
+                    svg {
+                        margin-left: 2em !important;
+                        color: $highlight;
+                        width: 0.75em; height: 0.75em;
+                        border: 2px solid $paragraph;
+                        padding: 2px;
+                    }
+
+                    svg.unchecked {
+                        color: $tertiary;
+                    }
+
+                    svg.disabled {
+                        color: $paragraph;
+                        background: lightgrey;
+                    }
                 }
             }
 
