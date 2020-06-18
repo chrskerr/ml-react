@@ -111,7 +111,13 @@ const DotChart = memo( function DotChart ({ data }) {
 		if ( actual > prediction ) return actual > total ? actual : total;
 		return prediction > total ? prediction: total;
 	}, -Infinity );
-	const domain = [ -1 * Math.ceil( largestVal * 2 ) / 2, 1 * Math.ceil( largestVal * 2 ) / 2 ];
+	const smallestVal = _.reduce( graphData, ( total, current ) => {
+		const actual = Math.abs( _.get( current, "actual" ));
+		const prediction = Math.abs( _.get( current, "prediction" ));
+		if ( actual < prediction ) return actual < total ? actual : total;
+		return prediction < total ? prediction: total;
+	}, Infinity );
+	const domain =  smallestVal < 0 ? [ -1 * Math.ceil( largestVal * 2 ) / 2, 1 * Math.ceil( largestVal * 2 ) / 2 ] : [ smallestVal, largestVal ];
 
 	const regressionLineFunc = linearRegressionLine( linearRegression( regressionData ));
 	const regressionLine = [
@@ -134,10 +140,12 @@ const DotChart = memo( function DotChart ({ data }) {
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
 					<Scatter data={ graphData } fill="#82ca9d" shape="circle" />
 					<Scatter line={{ stroke: "#e16162", strokeWidth: 1 }} data={ regressionLine } shape="circle" fill="#e16162" />
-					<ReferenceLine x={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
-					<ReferenceLine x={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
-					<ReferenceLine y={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideTopLeft" }} />
-					<ReferenceLine y={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideTopLeft" }} />
+					{ smallestVal < 0 && <>
+						<ReferenceLine x={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
+						<ReferenceLine x={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
+						<ReferenceLine y={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideTopLeft" }} />
+						<ReferenceLine y={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideTopLeft" }} /> 
+					</> }
 				</ScatterChart>
 			</ResponsiveContainer>
 		</>
@@ -148,7 +156,7 @@ DotChart.propTypes = {
 };
 
 const DistributionChart = memo( function DistributionChart ({ data }) {
-	const numberOfIntervals = 20;
+	const numberOfIntervals = 50;
     
 	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 ) * 100 ));
 	const range = 2 * max([ 0 - min( variations ), max( variations ) ]);
@@ -161,20 +169,26 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 		const middle = Number(( start + intervalLength * ( i )).toFixed( 5 ));
 		const top = Number(( start + intervalLength * ( i + 0.5 )).toFixed( 5 )); 
 		const matchedVariations = _.filter( variations, variation => variation > bottom && variation <= top );
-		return { name: middle, value: _.size( matchedVariations ) };
+		return { name: middle, value: _.size( matchedVariations ), size: 0 };
 	});
+    
+	const mean = mean( variations ).toFixed( 3 );
+	const actualsStDev = standardDeviation( variations ).toFixed( 3 );
         
 	return (
 		<>
 			<h3>Variations distribution</h3>
 			<ResponsiveContainer>
-				<ComposedChart data={ graphData } margin={{ top: 20, bottom: 20, left: -25 }} >
+				<ScatterChart data={ graphData } margin={{ top: 20, bottom: 20, left: -25 }} >
 					<XAxis dataKey="name" />
 					<YAxis dataKey="value" />
+					<ZAxis dataKey="size" range={[ 1, 10 ]} />
 					<Tooltip />
-					<Line type="natural" dataKey="value" stroke="#82ca9d" dot={ false } />
-					<ReferenceLine x={ 0 } stroke="#C98BBE" label={{ value: "0", position: "insideBottomRight" }} />
-				</ComposedChart>
+					<Scatter line="true" dataKey="value" stroke="#82ca9d" />
+					<ReferenceLine x={ mean } stroke="#C98BBE" label={{ value: "Mean", orientation: 90, position: "insideBottomRight" }} />
+					<ReferenceLine x={ mean + actualsStDev } stroke="#C98BBE" label={{ value: "+ σ", orientation: 90, position: "insideBottomRight" }} />
+					<ReferenceLine x={ mean - actualsStDev } stroke="#C98BBE" label={{ value: "- σ", orientation: 90, position: "insideBottomRight" }} />
+				</ScatterChart>
 			</ResponsiveContainer>
 		</>
 	);
