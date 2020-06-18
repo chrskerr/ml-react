@@ -104,6 +104,9 @@ export default function Home () {
 const DotChart = memo( function DotChart ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual * 100 ).toFixed( 4 )), prediction: Number(( prediction * 100 ).toFixed( 4 )), z: 1 }));
 	const regressionData = _.map( data, ({ actual, prediction }) => ([ actual * 100, prediction * 100 ]));
+	const regressionLineFunc = linearRegressionLine( linearRegression( regressionData ));
+	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
+	const negActualsStDev = actualsStDev * -1;
 
 	const largestVal = _.reduce( graphData, ( total, current ) => {
 		const actual = Math.abs( _.get( current, "actual" ));
@@ -113,23 +116,20 @@ const DotChart = memo( function DotChart ({ data }) {
 	}, -Infinity );
 	const domain = [ -1 * Math.ceil( largestVal * 2 ) / 2, 1 * Math.ceil( largestVal * 2 ) / 2 ];
 
-	const regressionLineFunc = linearRegressionLine( linearRegression( regressionData ));
 	const regressionLine = [
 		{ actual: domain[ 0 ], prediction: regressionLineFunc( domain[ 0 ]) },
 		{ actual: domain[ 1 ], prediction: regressionLineFunc( domain[ 1 ]) },
 	];
     
-	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
-	const negActualsStDev = actualsStDev * -1;
-    
+
 	return (
 		<>
 			<h3>Predictions vs Actuals scatter</h3>
 			<ResponsiveContainer>
-				<ScatterChart margin={{ top: 20, bottom: 20 }} data={ graphData }>
+				<ScatterChart margin={{ top: 50, bottom: 20, right: 70, left: 20 }}>
 					<CartesianGrid />
 					<XAxis type="number" dataKey="actual" name="actual" domain={ domain } label={{ value: "Actual Change (cents)", position: "bottom", offset: 0 }} />
-					<YAxis type="number" dataKey="prediction" name="prediction" domain={ domain } label={{ value: "Predicted Change (cents)", position: "centerBottom", angle: -90, offset: 5 }} />
+					<YAxis type="number" dataKey="prediction" name="prediction" domain={ domain } label={{ value: "Predicted Change (cents)", position: "left", angle: -90, offset: 0 }} />
 					<ZAxis dataKey="z" range={[ 1, 10 ]} />
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
 					<Scatter data={ graphData } fill="#82ca9d" shape="circle" />
