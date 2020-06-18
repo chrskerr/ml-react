@@ -174,8 +174,8 @@ body {
             }
 
             .scatter {
-                width: 44em;
-                height: 40em;
+                width: 60em;
+                height: 60em;
                 margin-bottom: 6em;
             }
 
@@ -222,7 +222,7 @@ body {
         }
 
         .scatter {
-            max-width: 100%;
+            width: 32em !important;
             height: 32em !important;
         }
 
@@ -248,6 +248,7 @@ body {
         }
 
         .scatter {
+            width: 22em !important;
             height: 22em !important;
         };
 
