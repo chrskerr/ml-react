@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner , faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 import gql from "graphql-tag";
-import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ComposedChart, Line, ReferenceLine } from "recharts";
+import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
 import { linearRegression, linearRegressionLine, min, max, mean, standardDeviation } from "simple-statistics";
 
 const GET_VERSIONS = gql`
@@ -161,7 +161,8 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 ) * 100 ));
 	const range = 2 * max([ 0 - min( variations ), max( variations ) ]);
 	const intervalLength = range / numberOfIntervals; 
-    
+	const sampleMean = mean( variations ).toFixed( 3 );
+	const actualsStDev = standardDeviation( variations ).toFixed( 3 );
 	const start = range / 2 * -1;
 
 	const graphData = _.map( _.range( 0, numberOfIntervals + 1 ), i => {
@@ -171,9 +172,6 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 		const matchedVariations = _.filter( variations, variation => variation > bottom && variation <= top );
 		return { name: middle, value: _.size( matchedVariations ), size: 0 };
 	});
-    
-	const mean = mean( variations ).toFixed( 3 );
-	const actualsStDev = standardDeviation( variations ).toFixed( 3 );
         
 	return (
 		<>
@@ -184,10 +182,10 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 					<YAxis dataKey="value" />
 					<ZAxis dataKey="size" range={[ 1, 10 ]} />
 					<Tooltip />
-					<Scatter line="true" dataKey="value" stroke="#82ca9d" />
-					<ReferenceLine x={ mean } stroke="#C98BBE" label={{ value: "Mean", orientation: 90, position: "insideBottomRight" }} />
-					<ReferenceLine x={ mean + actualsStDev } stroke="#C98BBE" label={{ value: "+ σ", orientation: 90, position: "insideBottomRight" }} />
-					<ReferenceLine x={ mean - actualsStDev } stroke="#C98BBE" label={{ value: "- σ", orientation: 90, position: "insideBottomRight" }} />
+					<Scatter line dataKey="value" stroke="#82ca9d" />
+					<ReferenceLine x={ sampleMean } stroke="#C98BBE" label={{ value: "Mean", orientation: 90, position: "insideBottomRight" }} />
+					<ReferenceLine x={ sampleMean + actualsStDev } stroke="#C98BBE" label={{ value: "+ σ", orientation: 90, position: "insideBottomRight" }} />
+					<ReferenceLine x={ sampleMean - actualsStDev } stroke="#C98BBE" label={{ value: "- σ", orientation: 90, position: "insideBottomRight" }} />
 				</ScatterChart>
 			</ResponsiveContainer>
 		</>
