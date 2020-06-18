@@ -43,7 +43,7 @@ export default function Home () {
 
 	const instruments = _.uniq( _.map( predictions, "instrument" ));
 	// eslint-disable-next-line
-	useEffect(() => { if ( !instrument ) setInstrument( _.first( instruments ));}, [ instruments ]);
+	useEffect(() => setInstrument( _.first( instruments )), [ instruments ]);
     
 	const filteredPredictions = _.filter( predictions, [ "instrument", instrument ]);
     
@@ -85,12 +85,12 @@ export default function Home () {
 							<Stats data={ filteredPredictions } />
 						</div>
 						<hr />
-						<div className="scatter">
-							<DotChart data={ filteredPredictions } />
-						</div>
-						<hr />
 						<div className="distribution">
 							<DistributionChart data={ filteredPredictions } />
+						</div>
+						<hr />
+						<div className="scatter">
+							<DotChart data={ filteredPredictions } />
 						</div>
 					</div> 
 					:
@@ -102,8 +102,8 @@ export default function Home () {
 }
 
 const DotChart = memo( function DotChart ({ data }) {
-	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual * 100 ).toFixed( 4 )), prediction: Number(( prediction * 100 ).toFixed( 4 )), z: 1 }));
-	const regressionData = _.map( data, ({ actual, prediction }) => ([ actual * 100, prediction * 100 ]));
+	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual ).toFixed( 4 )), prediction: Number(( prediction ).toFixed( 4 )), z: 1 }));
+	const regressionData = _.map( data, ({ actual, prediction }) => ([ actual, prediction ]));
 	const regressionLineFunc = linearRegressionLine( linearRegression( regressionData ));
 	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
 	const negActualsStDev = actualsStDev * -1;
@@ -158,11 +158,11 @@ DotChart.propTypes = {
 const DistributionChart = memo( function DistributionChart ({ data }) {
 	const numberOfIntervals = 50;
     
-	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 ) * 100 ));
+	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
 	const range = 2 * max([ 0 - min( variations ), max( variations ) ]);
 	const intervalLength = range / numberOfIntervals; 
-	const sampleMean = mean( variations ).toFixed( 3 );
-	const actualsStDev = standardDeviation( variations ).toFixed( 3 );
+	const sampleMean = mean( variations );
+	const actualsStDev = standardDeviation( variations );
 	const start = range / 2 * -1;
 
 	const graphData = _.map( _.range( 0, numberOfIntervals + 1 ), i => {
@@ -172,20 +172,24 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 		const matchedVariations = _.filter( variations, variation => variation > bottom && variation <= top );
 		return { name: middle, value: _.size( matchedVariations ), size: 0 };
 	});
+    
+	const positiveStDevLineX = sampleMean + actualsStDev;
+	const negativeStDevLineX = sampleMean - actualsStDev;
+	console.log( negativeStDevLineX, positiveStDevLineX );
         
 	return (
 		<>
 			<h3>Variations distribution</h3>
 			<ResponsiveContainer>
-				<ScatterChart data={ graphData } margin={{ top: 20, bottom: 20, left: -25 }} >
+				<ScatterChart margin={{ top: 20, bottom: 20, left: -25 }} >
 					<XAxis dataKey="name" />
 					<YAxis dataKey="value" />
 					<ZAxis dataKey="size" range={[ 1, 10 ]} />
-					<Tooltip />
-					<Scatter line dataKey="value" stroke="#82ca9d" />
+					<Tooltip cursor={{ strokeDasharray: "3 3" }}/>
+					<Scatter data={ graphData } line={{ stroke: "#82ca9d", strokeWidth: 1 }} stroke="#82ca9d" />
 					<ReferenceLine x={ sampleMean } stroke="#C98BBE" label={{ value: "Mean", orientation: 90, position: "insideBottomRight" }} />
-					<ReferenceLine x={ sampleMean + actualsStDev } stroke="#C98BBE" label={{ value: "+ σ", orientation: 90, position: "insideBottomRight" }} />
-					<ReferenceLine x={ sampleMean - actualsStDev } stroke="#C98BBE" label={{ value: "- σ", orientation: 90, position: "insideBottomRight" }} />
+					<ReferenceLine x={ positiveStDevLineX } stroke="#C98BBE" label={{ value: "+ σ", orientation: 90, position: "insideBottomRight" }} />
+					<ReferenceLine x={ negativeStDevLineX } stroke="#C98BBE" label={{ value: "- σ", orientation: 90, position: "insideBottomRight" }} />
 				</ScatterChart>
 			</ResponsiveContainer>
 		</>
@@ -229,11 +233,11 @@ const Stats = ({ data }) => {
 					</tr>
 					<tr>
 						<td>Sample mean:</td>
-						<td>{ ( sampleMean ).toFixed( 5 ) * 100 }</td>
+						<td>{ ( sampleMean ).toFixed( 5 ) }</td>
 					</tr>
 					<tr>
 						<td>Sample Standard Deviation (have not checked if curve is normal..):</td>
-						<td>{ ( sampleStandardDev ).toFixed( 5 ) * 100 }</td>
+						<td>{ ( sampleStandardDev ).toFixed( 5 ) }</td>
 					</tr>
 					<tr>
 						<td>Percentage of samples which predicted up and were correct:</td>
