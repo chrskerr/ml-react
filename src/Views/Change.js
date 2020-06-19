@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { memo } from "react";
 import PropTypes from "proptypes";
 import _ from "lodash";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
@@ -27,7 +27,7 @@ Change.propTypes = {
 	data: PropTypes.array,
 };
 
-function DotChart ({ data }) {
+const DotChart = memo( function DotChart ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual ).toFixed( 4 ) * 100 ), prediction: Number(( prediction ).toFixed( 4 ) * 100 ), z: 1 }));
 	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
 	const negActualsStDev = actualsStDev * -1;
@@ -59,12 +59,12 @@ function DotChart ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}
+});
 DotChart.propTypes = {
 	data: PropTypes.array,
 };
 
-function DistributionChart ({ data }) {
+const DistributionChart = memo( function DistributionChart ({ data }) {
 	const numberOfIntervals = 50;
     
 	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 ) * 100 ));
@@ -103,12 +103,12 @@ function DistributionChart ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}
+});
 DistributionChart.propTypes = {
 	data: PropTypes.array,
 };
 
-const Stats = ({ data }) => {
+const Stats = memo( function Stats ({ data }) {
 	const sampleCount = _.size( data );
     
 	const actuals = _.map( data, "actual" );
@@ -116,19 +116,25 @@ const Stats = ({ data }) => {
 	const actualsStDev = standardDeviation( actuals ) - actualsMean;
 	const negActualsStDev = actualsMean - actualsStDev;
         
-	const upwardSamples = _.filter( data, ({ actual }) => actual > actualsStDev );
-	const downwardSamples = _.filter( data, ({ actual }) => actual < negActualsStDev );
-	const flatSamples = _.filter( data, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev );
-
-	const upwardCorrect = _.filter( upwardSamples, ({ prediction }) => prediction > actualsStDev );
-	const downwardsCorrect = _.filter( downwardSamples, ({ prediction }) => prediction < negActualsStDev );
-	const flatCorrect = _.filter( flatSamples, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev );
+	const upAUpP = _.size( _.filter( data, ({ actual, prediction }) => actual > actualsStDev && prediction > actualsStDev ));
+	const upAFlatP = _.size( _.filter( data, ({ actual, prediction }) => actual > actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	const upADownP = _.size( _.filter( data, ({ actual, prediction }) => actual > actualsStDev && prediction < negActualsStDev ));
+	const upATotal = _.size( _.filter( data, ({ actual }) => actual > actualsStDev ));
+	const upPTotal = _.size( _.filter( data, ({ prediction }) => prediction > actualsStDev ));
     
-	const percUpwardCorrect = _.size( upwardCorrect ) / _.size( upwardSamples ) * 100;
-	const percDownwardsCorrect = _.size( downwardsCorrect ) / _.size( downwardSamples ) * 100;
-	const percFlatCorrect = _.size( flatCorrect ) / _.size( flatSamples ) * 100;
+	const flatAUpP = _.size( _.filter( data, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction > actualsStDev ));
+	const flatAFlatP = _.size( _.filter( data, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	const flatADownP = _.size( _.filter( data, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction < negActualsStDev ));
+	const flatATotal = _.size( _.filter( data, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev ));
+	const flatPTotal = _.size( _.filter( data, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev ));
+    
+	const downAUpP = _.size( _.filter( data, ({ actual, prediction }) => actual < negActualsStDev && prediction > actualsStDev ));
+	const downAFlatP = _.size( _.filter( data, ({ actual, prediction }) => actual < negActualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	const downADownP = _.size( _.filter( data, ({ actual, prediction }) => actual < negActualsStDev && prediction < negActualsStDev ));
+	const downATotal = _.size( _.filter( data, ({ actual }) => actual < negActualsStDev ));
+	const downPTotal = _.size( _.filter( data, ({ prediction }) => prediction < negActualsStDev ));
 
-	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 ) * 100 ));
+	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
 	const sampleMean = mean( variations );
 	const sampleStandardDev = standardDeviation( variations );
 
@@ -149,23 +155,54 @@ const Stats = ({ data }) => {
 						<td>Sample Standard Deviation:</td>
 						<td>{ ( sampleStandardDev ).toFixed( 5 ) }</td>
 					</tr>
+				</tbody>
+			</table>
+			<br />
+			<table className="comparison-table">
+				<thead>
 					<tr>
-						<td>Percentage of samples which predicted up and were correct:</td>
-						<td>{ _.size( upwardCorrect ) } / { _.size( upwardSamples ) } = { percUpwardCorrect.toFixed( 1 ) }%</td>
+						<th></th>
+						<th>Prediction Up</th>
+						<th>Prediction Flat</th>
+						<th>Prediction Down</th>
+						<th>Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th>Actual Up</th>
+						<td>{ upAUpP } / { ( upAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upAFlatP } / { ( upAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upADownP } / { ( upADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upATotal }</td>
 					</tr>
 					<tr>
-						<td>Percentage of samples which predicted downward and were correct:</td>
-						<td>{ _.size( downwardsCorrect ) } / { _.size( downwardSamples ) } = { percDownwardsCorrect.toFixed( 1 ) }%</td>
+						<th>Actual Flat</th>
+						<td>{ flatAUpP } / { ( flatAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ flatAFlatP } / { ( flatAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ flatADownP } / { ( flatADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ flatATotal }</td>
 					</tr>
 					<tr>
-						<td>Percentage of samples which predicted flat and were correct:</td>
-						<td>{ _.size( flatCorrect ) } / { _.size( flatSamples ) } = { percFlatCorrect.toFixed( 1 ) }%</td>
+						<th>Actual Down</th>
+						<td>{ downAUpP } / { ( downAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downAFlatP } / { ( downAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downADownP } / { ( downADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downATotal }</td>
+					</tr>
+					<tr>
+						<th>Total</th>
+						<td>{ upPTotal }</td>
+						<td>{ flatPTotal }</td>
+						<td>{ downPTotal }</td>
+						<td>{ upATotal + flatATotal + downATotal } / { upPTotal + flatPTotal + downPTotal }</td>
 					</tr>
 				</tbody>
 			</table>
+			<p>% are of number of predictions per the actual, so accuracy in that actual direction</p>
 		</>
 	);
-};
+});
 Stats.propTypes = {
 	data: PropTypes.array,
 };

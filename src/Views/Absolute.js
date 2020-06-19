@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { memo } from "react";
 import PropTypes from "proptypes";
 import _ from "lodash";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
@@ -32,7 +32,7 @@ Absolute.propTypes = {
 	data: PropTypes.array,
 };
 
-function DotChartPrice ({ data }) {
+const DotChartPrice = memo( function DotChartPrice ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual ).toFixed( 4 )), prediction: Number(( prediction ).toFixed( 4 )), z: 1 }));
 
 	const largestVal = _.reduce( graphData, ( total, current ) => {
@@ -64,12 +64,12 @@ function DotChartPrice ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}
+});
 DotChartPrice.propTypes = {
 	data: PropTypes.array,
 };
 
-function DotChartDifference ({ data }) {
+const DotChartDifference = memo( function DotChartDifference ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction, close }) => ({ actual: Number(( actual - close ).toFixed( 4 )), prediction: Number(( prediction - close ).toFixed( 4 )), z: 1 }));
 	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
 	const negActualsStDev = actualsStDev * -1;
@@ -107,12 +107,12 @@ function DotChartDifference ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}
+});
 DotChartDifference.propTypes = {
 	data: PropTypes.array,
 };
 
-function DistributionChart ({ data }) {
+const DistributionChart = memo( function DistributionChart ({ data }) {
 	const numberOfIntervals = 50;
     
 	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
@@ -150,12 +150,12 @@ function DistributionChart ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}
+});
 DistributionChart.propTypes = {
 	data: PropTypes.array,
 };
 
-const Stats = ({ data }) => {
+const Stats = memo( function Stats ({ data }) {
 	const sampleCount = _.size( data );
     
 	const differences = _.map( data, ({ actual, prediction, close }) => ({ actual: Number(( actual - close ).toFixed( 4 )), prediction: Number(( prediction - close ).toFixed( 4 )) }));
@@ -165,7 +165,7 @@ const Stats = ({ data }) => {
 	const actualStDev = standardDeviation( actuals ) / 2;
 	const actualsStDev = actualStDev - actualsMean;
 	const negActualsStDev = actualsMean - actualStDev;
-        
+
 	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction > actualsStDev ));
 	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
 	const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction < negActualsStDev ));
@@ -252,7 +252,7 @@ const Stats = ({ data }) => {
 			<p>% are of number of predictions per the actual, so accuracy in that actual direction</p>
 		</>
 	);
-};
+});
 Stats.propTypes = {
 	data: PropTypes.array,
 };

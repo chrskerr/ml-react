@@ -11,7 +11,7 @@ import Change from "./Views/Change";
 
 const GET_VERSIONS = gql`
 query GetVersions {
-    versions { id prediction_type }
+    versions ( order_by: { id: asc } ) { id prediction_type }
 }
 `;
 
