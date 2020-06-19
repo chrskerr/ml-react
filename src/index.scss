@@ -68,9 +68,13 @@ body {
                     align-items: center;
                     margin-right: 3em;
 
-                    select {
+                    select, input {
                         margin-left: 2em !important;
                         font-size: 115%;
+                    }
+
+                    input {
+                        width: 2em;
                     }
 
                     svg {
@@ -193,7 +197,7 @@ body {
                     border-collapse: collapse;
 
                     tr {
-                        td:first-child {
+                        td, th {
                             color: white;
                             padding-right: 2em;
                         }
@@ -201,6 +205,15 @@ body {
                         td:last-child {
                             color: $paragraph;
                         }
+
+                        
+                    }
+                }
+                table.comparison-table {
+                    text-align: left;
+                    width: 100%;
+                    td {
+                        color: $paragraph;
                     }
                 }
             }

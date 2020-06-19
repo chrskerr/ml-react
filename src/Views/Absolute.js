@@ -1,9 +1,9 @@
 
-import React, { memo } from "react";
+import React from "react";
 import PropTypes from "proptypes";
 import _ from "lodash";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
-import { linearRegression, linearRegressionLine, min, max, mean, standardDeviation } from "simple-statistics";
+import { min, max, mean, standardDeviation } from "simple-statistics";
 
 export default function Absolute ({ data }) {    
 	return (
@@ -32,10 +32,8 @@ Absolute.propTypes = {
 	data: PropTypes.array,
 };
 
-const DotChartPrice = memo( function DotChartPrice ({ data }) {
+function DotChartPrice ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual ).toFixed( 4 )), prediction: Number(( prediction ).toFixed( 4 )), z: 1 }));
-	const regressionData = _.map( data, ({ actual, prediction }) => ([ actual, prediction ]));
-	const regressionLineFunc = linearRegressionLine( linearRegression( regressionData ));
 
 	const largestVal = _.reduce( graphData, ( total, current ) => {
 		const actual = _.get( current, "actual" );
@@ -50,11 +48,6 @@ const DotChartPrice = memo( function DotChartPrice ({ data }) {
 		return prediction < total ? prediction: total;
 	}, Infinity );
 	const domain =  [ smallestVal, largestVal ];
-
-	const regressionLine = [
-		{ actual: domain[ 0 ], prediction: regressionLineFunc( domain[ 0 ]) },
-		{ actual: domain[ 1 ], prediction: regressionLineFunc( domain[ 1 ]) },
-	];
 
 	return (
 		<>
@@ -66,22 +59,21 @@ const DotChartPrice = memo( function DotChartPrice ({ data }) {
 					<YAxis type="number" dataKey="prediction" name="prediction" domain={ domain } label={{ value: "Predicted Change (cents)", position: "left", angle: -90, offset: 0 }} />
 					<ZAxis dataKey="z" range={[ 1, 10 ]} />
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
-					<Scatter data={ graphData } fill="#82ca9d" shape="circle" />
-					<Scatter line={{ stroke: "#e16162", strokeWidth: 1 }} data={ regressionLine } shape="circle" fill="#e16162" />
+					<Scatter data={ graphData } fill="#82ca9d" shape="circle" line={{ stroke: "#e16162", strokeWidth: 1 }} lineType="fitting" />
 				</ScatterChart>
 			</ResponsiveContainer>
 		</>
 	);
-}, _.isEqual );
+}
 DotChartPrice.propTypes = {
 	data: PropTypes.array,
 };
 
-const DotChartDifference = memo( function DotChartDifference ({ data }) {
+function DotChartDifference ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction, close }) => ({ actual: Number(( actual - close ).toFixed( 4 )), prediction: Number(( prediction - close ).toFixed( 4 )), z: 1 }));
-	const regressionData = _.map( graphData, ({ actual, prediction }) => ([ actual, prediction ]));
-	const regressionLineFunc = linearRegressionLine( linearRegression( regressionData ));
-
+	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
+	const negActualsStDev = actualsStDev * -1;
+    
 	const largestVal = _.reduce( graphData, ( total, current ) => {
 		const actual = _.get( current, "actual" );
 		const prediction = _.get( current, "prediction" );
@@ -96,14 +88,9 @@ const DotChartDifference = memo( function DotChartDifference ({ data }) {
 	}, Infinity );
 	const domain =  [ smallestVal, largestVal ];
 
-	const regressionLine = [
-		{ actual: domain[ 0 ], prediction: regressionLineFunc( domain[ 0 ]) },
-		{ actual: domain[ 1 ], prediction: regressionLineFunc( domain[ 1 ]) },
-	];
-
 	return (
 		<>
-			<h3>Prediction differencee distribution scatter</h3>
+			<h3>Prediction difference distribution scatter</h3>
 			<ResponsiveContainer>
 				<ScatterChart margin={{ top: 50, bottom: 20, right: 70, left: 20 }}>
 					<CartesianGrid />
@@ -111,18 +98,21 @@ const DotChartDifference = memo( function DotChartDifference ({ data }) {
 					<YAxis type="number" dataKey="prediction" name="prediction" domain={ domain } label={{ value: "Predicted Change (cents)", position: "left", angle: -90, offset: 0 }} />
 					<ZAxis dataKey="z" range={[ 1, 10 ]} />
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
-					<Scatter data={ graphData } fill="#82ca9d" shape="circle" />
-					<Scatter line={{ stroke: "#e16162", strokeWidth: 1 }} data={ regressionLine } shape="circle" fill="#e16162" />
+					<Scatter data={ graphData } fill="#82ca9d" shape="circle" line={{ stroke: "#e16162", strokeWidth: 2 }} lineType="fitting" />
+					<ReferenceLine x={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
+					<ReferenceLine x={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
+					<ReferenceLine y={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideTopLeft" }} />
+					<ReferenceLine y={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideTopLeft" }} /> 
 				</ScatterChart>
 			</ResponsiveContainer>
 		</>
 	);
-}, _.isEqual );
+}
 DotChartDifference.propTypes = {
 	data: PropTypes.array,
 };
 
-const DistributionChart = memo( function DistributionChart ({ data }) {
+function DistributionChart ({ data }) {
 	const numberOfIntervals = 50;
     
 	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
@@ -160,7 +150,7 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}, _.isEqual );
+}
 DistributionChart.propTypes = {
 	data: PropTypes.array,
 };
@@ -170,20 +160,29 @@ const Stats = ({ data }) => {
     
 	const differences = _.map( data, ({ actual, prediction, close }) => ({ actual: Number(( actual - close ).toFixed( 4 )), prediction: Number(( prediction - close ).toFixed( 4 )) }));
     
-	const actualsStDev = standardDeviation( _.map( differences, "actual" ));
-	const negActualsStDev = actualsStDev * -1;
+	const actuals = _.map( differences, "actual" );
+	const actualsMean = mean( actuals );
+	const actualStDev = standardDeviation( actuals ) / 2;
+	const actualsStDev = actualStDev - actualsMean;
+	const negActualsStDev = actualsMean - actualStDev;
+        
+	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction > actualsStDev ));
+	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction < negActualsStDev ));
+	const upATotal = _.size( _.filter( differences, ({ actual }) => actual > actualsStDev ));
+	const upPTotal = _.size( _.filter( differences, ({ prediction }) => prediction > actualsStDev ));
     
-	const upwardSamples = _.filter( differences, ({ actual }) => actual > actualsStDev );
-	const downwardSamples = _.filter( differences, ({ actual }) => actual < negActualsStDev );
-	const flatSamples = _.filter( differences, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev );
-
-	const upwardCorrect = _.filter( upwardSamples, ({ prediction }) => prediction > actualsStDev );
-	const downwardsCorrect = _.filter( downwardSamples, ({ prediction }) => prediction < actualsStDev );
-	const flatCorrect = _.filter( flatSamples, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev );
+	const flatAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction > actualsStDev ));
+	const flatAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	const flatADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction < negActualsStDev ));
+	const flatATotal = _.size( _.filter( differences, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev ));
+	const flatPTotal = _.size( _.filter( differences, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev ));
     
-	const percUpwardCorrect = _.size( upwardCorrect ) / _.size( upwardSamples ) * 100;
-	const percDownwardsCorrect = _.size( downwardsCorrect ) / _.size( downwardSamples ) * 100;
-	const percFlatCorrect = _.size( flatCorrect ) / _.size( flatSamples ) * 100;
+	const downAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction > actualsStDev ));
+	const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction < negActualsStDev ));
+	const downATotal = _.size( _.filter( differences, ({ actual }) => actual < negActualsStDev ));
+	const downPTotal = _.size( _.filter( differences, ({ prediction }) => prediction < negActualsStDev ));
 
 	const variations = _.map( differences, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 )));
 	const sampleMean = mean( variations );
@@ -206,20 +205,51 @@ const Stats = ({ data }) => {
 						<td>Sample Standard Deviation:</td>
 						<td>{ ( sampleStandardDev ).toFixed( 5 ) }</td>
 					</tr>
+				</tbody>
+			</table>
+			<br />
+			<table className="comparison-table">
+				<thead>
 					<tr>
-						<td>Percentage of samples which predicted up and were correct:</td>
-						<td>{ _.size( upwardCorrect ) } / { _.size( upwardSamples ) } = { percUpwardCorrect.toFixed( 1 ) }%</td>
+						<th></th>
+						<th>Prediction Up</th>
+						<th>Prediction Flat</th>
+						<th>Prediction Down</th>
+						<th>Total</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th>Actual Up</th>
+						<td>{ upAUpP } / { ( upAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upAFlatP } / { ( upAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upADownP } / { ( upADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upATotal }</td>
 					</tr>
 					<tr>
-						<td>Percentage of samples which predicted downward and were correct:</td>
-						<td>{ _.size( downwardsCorrect ) } / { _.size( downwardSamples ) } = { percDownwardsCorrect.toFixed( 1 ) }%</td>
+						<th>Actual Flat</th>
+						<td>{ flatAUpP } / { ( flatAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ flatAFlatP } / { ( flatAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ flatADownP } / { ( flatADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ flatATotal }</td>
 					</tr>
 					<tr>
-						<td>Percentage of samples which predicted flat and were correct:</td>
-						<td>{ _.size( flatCorrect ) } / { _.size( flatSamples ) } = { percFlatCorrect.toFixed( 1 ) }%</td>
+						<th>Actual Down</th>
+						<td>{ downAUpP } / { ( downAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downAFlatP } / { ( downAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downADownP } / { ( downADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downATotal }</td>
+					</tr>
+					<tr>
+						<th>Total</th>
+						<td>{ upPTotal }</td>
+						<td>{ flatPTotal }</td>
+						<td>{ downPTotal }</td>
+						<td>{ upATotal + flatATotal + downATotal } / { upPTotal + flatPTotal + downPTotal }</td>
 					</tr>
 				</tbody>
 			</table>
+			<p>% are of number of predictions per the actual, so accuracy in that actual direction</p>
 		</>
 	);
 };

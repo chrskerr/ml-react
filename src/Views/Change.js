@@ -1,9 +1,9 @@
 
-import React, { memo } from "react";
+import React from "react";
 import PropTypes from "proptypes";
 import _ from "lodash";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
-import { linearRegression, linearRegressionLine, min, max, mean, standardDeviation } from "simple-statistics";
+import { min, max, mean, standardDeviation } from "simple-statistics";
 
 export default function Change ({ data }) {    
 	return (
@@ -27,10 +27,8 @@ Change.propTypes = {
 	data: PropTypes.array,
 };
 
-const DotChart = memo( function DotChart ({ data }) {
+function DotChart ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction }) => ({ actual: Number(( actual ).toFixed( 4 ) * 100 ), prediction: Number(( prediction ).toFixed( 4 ) * 100 ), z: 1 }));
-	const regressionData = _.map( graphData, ({ actual, prediction }) => ([ actual, prediction ]));
-	const regressionLineFunc = linearRegressionLine( linearRegression( regressionData ));
 	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
 	const negActualsStDev = actualsStDev * -1;
 
@@ -42,12 +40,6 @@ const DotChart = memo( function DotChart ({ data }) {
 	}, -Infinity );
 	const domain =  [ -1 * Math.ceil( largestVal * 2 ) / 2, 1 * Math.ceil( largestVal * 2 ) / 2 ];
 
-	const regressionLine = [
-		{ actual: domain[ 0 ], prediction: regressionLineFunc( domain[ 0 ]) },
-		{ actual: domain[ 1 ], prediction: regressionLineFunc( domain[ 1 ]) },
-	];
-    
-
 	return (
 		<>
 			<h3>Predictions vs Actuals scatter</h3>
@@ -58,8 +50,7 @@ const DotChart = memo( function DotChart ({ data }) {
 					<YAxis type="number" dataKey="prediction" name="prediction" domain={ domain } label={{ value: "Predicted Change (cents)", position: "left", angle: -90, offset: 0 }} />
 					<ZAxis dataKey="z" range={[ 1, 10 ]} />
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
-					<Scatter data={ graphData } fill="#82ca9d" shape="circle" />
-					<Scatter line={{ stroke: "#e16162", strokeWidth: 1 }} data={ regressionLine } shape="circle" fill="#e16162" />
+					<Scatter data={ graphData } fill="#82ca9d" shape="circle" line={{ stroke: "#e16162", strokeWidth: 1 }} lineType="fitting" />
 					<ReferenceLine x={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
 					<ReferenceLine x={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
 					<ReferenceLine y={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideTopLeft" }} />
@@ -68,12 +59,12 @@ const DotChart = memo( function DotChart ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}, _.isEqual );
+}
 DotChart.propTypes = {
 	data: PropTypes.array,
 };
 
-const DistributionChart = memo( function DistributionChart ({ data }) {
+function DistributionChart ({ data }) {
 	const numberOfIntervals = 50;
     
 	const variations = _.map( data, ({ actual, prediction }) => Number(( actual - prediction ).toFixed( 4 ) * 100 ));
@@ -112,7 +103,7 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 			</ResponsiveContainer>
 		</>
 	);
-}, _.isEqual );
+}
 DistributionChart.propTypes = {
 	data: PropTypes.array,
 };
@@ -120,15 +111,17 @@ DistributionChart.propTypes = {
 const Stats = ({ data }) => {
 	const sampleCount = _.size( data );
     
-	const actualsStDev = standardDeviation( _.map( data, "actual" ));
-	const negActualsStDev = actualsStDev * -1;
-    
+	const actuals = _.map( data, "actual" );
+	const actualsMean = mean( actuals );
+	const actualsStDev = standardDeviation( actuals ) - actualsMean;
+	const negActualsStDev = actualsMean - actualsStDev;
+        
 	const upwardSamples = _.filter( data, ({ actual }) => actual > actualsStDev );
 	const downwardSamples = _.filter( data, ({ actual }) => actual < negActualsStDev );
 	const flatSamples = _.filter( data, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev );
 
 	const upwardCorrect = _.filter( upwardSamples, ({ prediction }) => prediction > actualsStDev );
-	const downwardsCorrect = _.filter( downwardSamples, ({ prediction }) => prediction < actualsStDev );
+	const downwardsCorrect = _.filter( downwardSamples, ({ prediction }) => prediction < negActualsStDev );
 	const flatCorrect = _.filter( flatSamples, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev );
     
 	const percUpwardCorrect = _.size( upwardCorrect ) / _.size( upwardSamples ) * 100;
