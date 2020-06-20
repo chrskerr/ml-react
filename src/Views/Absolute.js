@@ -162,12 +162,10 @@ const Stats = memo( function Stats ({ data }) {
 	const differences = _.map( data, ({ actual, prediction, close }) => ({ actual: Number(( actual - close ).toFixed( 4 )), prediction: Number(( prediction - close ).toFixed( 4 )) }));
 	
 	const actuals = _.map( differences, "actual" );
-	const actualsMean = mean( actuals );
-	// const actualStDev = standardDeviation( actuals ) / 2;
-	const actualStDev = standardDeviation( actuals ) / 2;
+	const actualStDev = standardDeviation( actuals );
 	const threshStDev = threshold >= 0 ? actualStDev * threshold / 100 : actualStDev;
-	const actualsStDev = threshStDev - actualsMean;
-	const negActualsStDev = actualsMean - threshStDev;
+	const actualsStDev = threshStDev;
+	const negActualsStDev = -1 * threshStDev;
 
 	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction > actualsStDev ));
 	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
@@ -213,7 +211,7 @@ const Stats = memo( function Stats ({ data }) {
 			<br />
 			<div className="options">
 				<div>
-					<p>Set up/down threshold percent:</p>
+					<p>Set difference threshold percent:</p>
 					<input type="number" onChange={ e => setThreshold( Number( e.target.value ))} value={ threshold } min={ 0 } />
 				</div>
 			</div>
@@ -221,11 +219,11 @@ const Stats = memo( function Stats ({ data }) {
 				<tbody>
 					<tr>
 						<td>Actuals Standard Dev:</td>
-						<td>{ actualStDev.toFixed( 5 ) }</td>
+						<td>{ actualStDev.toFixed( 3 ) }</td>
 					</tr>
 					<tr>
-						<td>Threshold Standard Dev:</td>
-						<td>{ threshStDev.toFixed( 5 ) }</td>
+						<td>Difference Threshold:</td>
+						<td>{ threshStDev.toFixed( 3 ) }</td>
 					</tr>
 				</tbody>
 			</table>
