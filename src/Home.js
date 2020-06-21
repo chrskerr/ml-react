@@ -51,8 +51,6 @@ export default function Home () {
 	useEffect(() => { if ( _.isEmpty( version ) && !_.isEmpty( versions )) setVersion( _.last( versions )); }, [ versions ]);
 	// eslint-disable-next-line
 	useEffect(() => { if ( versionId ) getPredictions({ variables: { version: versionId, was_back_predicted: includeBackPredicted ? [ true, false ] : [ false ], start_time }}); }, [ version, includeBackPredicted, daysBack ]);
-
-
         
 	return (
 		<div className="body">
