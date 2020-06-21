@@ -96,6 +96,17 @@ body {
                 }
             }
 
+            .version-info {
+                p {
+                    margin: 0;
+
+                    span {
+                        color: white;
+                        padding-left: 2em;
+                    }
+                }
+            }
+
             .card {
                 border: 2px solid $stroke;
                 border-radius: 5px;

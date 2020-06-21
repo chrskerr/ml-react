@@ -5,13 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSpinner , faCheck, faTimes } from "@fortawesome/free-solid-svg-icons";
 import _ from "lodash";
 import gql from "graphql-tag";
-import { max } from "simple-statistics";
 import Absolute from "./Views/Absolute";
 import Change from "./Views/Change";
 
 const GET_VERSIONS = gql`
 query GetVersions {
-    versions ( order_by: { id: asc } ) { id prediction_type }
+    versions ( order_by: { id: asc } ) { id prediction_type instrument depth granularity }
 }
 `;
 
@@ -25,7 +24,6 @@ query GetPredictions ( $version: Int!, $was_back_predicted: [Boolean!], $start_t
         time: { _gte: $start_time }
     }) {
         actual id time
-        instrument
         prediction
         _version
         close
@@ -33,30 +31,29 @@ query GetPredictions ( $version: Int!, $was_back_predicted: [Boolean!], $start_t
 }`;
 
 export default function Home () {
-	const [ instrument, setInstrument ] = useState( false );
-	const [ version, setVersion ] = useState( -1 );
+	const [ version, setVersion ] = useState({});
 	const [ includeBackPredicted, setIncludeBackPredicted ] = useState( true );
 	const [ daysBack, setDaysBack ] = useState( 7 );
 	const start_time = daysBack === 0 ? new Date( 0 ).toISOString() : new Date( Date.now() - ( 1000 * 60 * 60 * 24 * daysBack )).toISOString();
     
 	const { data: versionsData } = useQuery( GET_VERSIONS );
 	const [ getPredictions, { data, loading }] = useLazyQuery( GET_PREDICTIONS );
-	// eslint-disable-next-line
-	useEffect(() => getPredictions({ variables: { version, was_back_predicted: includeBackPredicted ? [ true, false ] : [ false ], start_time }}), [ version, includeBackPredicted, daysBack ]);
 
+	const versions = _.get( versionsData, "versions" );
+	const versionId = _.get( version, "id" );
 	const predictions = _.get( data, "predictions" );
+	const prediction_type = _.get( version, "prediction_type" );
+	const instrument = _.get( version, "instrument" );
+	const granularity = _.get( version, "granularity" );
+	const depth = _.get( version, "depth" );
 
-	const versions = _.map( _.get( versionsData, "versions" ), "id" );
 	// eslint-disable-next-line
-	useEffect(() => { if ( version === -1 && !_.isEmpty( versions )) setVersion( max( versions )); }, [ versions ]);
+	useEffect(() => { if ( _.isEmpty( version ) && !_.isEmpty( versions )) setVersion( _.last( versions )); }, [ versions ]);
+	// eslint-disable-next-line
+	useEffect(() => { if ( versionId ) getPredictions({ variables: { version: versionId, was_back_predicted: includeBackPredicted ? [ true, false ] : [ false ], start_time }}); }, [ version, includeBackPredicted, daysBack ]);
 
-	const prediction_type = _.get( _.find( _.get( versionsData, "versions" ), [ "id", version ]), "prediction_type" );
-	const instruments = _.uniq( _.map( predictions, "instrument" ));
-	// eslint-disable-next-line
-    useEffect(() => setInstrument( _.first( instruments )), [ instruments, version ]);
+
         
-	const filteredPredictions = _.filter( predictions, [ "instrument", instrument ]);
-
 	return (
 		<div className="body">
 			<div className="header">
@@ -66,14 +63,8 @@ export default function Home () {
 			<div className="options">
 				<div>
 					<p>Select Version:</p>
-					<select value={ version } onChange={ e => setVersion( Number( e.target.value ))}>
-						{ !_.isEmpty( versions ) && _.map( versions, version => <option key={ version } value={ version }>{ version }</option> ) }
-					</select>
-				</div>
-				<div>
-					<p>Select Instruments:</p>
-					<select value={ instrument } onChange={ e => setInstrument( e.target.value )}>
-						{ !_.isEmpty( instruments ) && _.map( instruments, instrument => <option key={ instrument } value={ instrument }>{ instrument }</option> ) }
+					<select value={ versionId } onChange={ e => setVersion( _.find( versions, [ "id", Number( e.target.value ) ])) }>
+						{ !_.isEmpty( versions ) && _.map( versions, ({ id }) => <option key={ id } value={ id }>{ id }</option> ) }
 					</select>
 				</div>
 				<div onClick={ () => setIncludeBackPredicted( !includeBackPredicted ) }>
@@ -85,16 +76,22 @@ export default function Home () {
 					<input type="number" onChange={ e => setDaysBack( Number( e.target.value ))} value={ daysBack } />
 				</div>
 			</div>
+			<div className="version-info">
+				<p>Instrument: <span>{ instrument }</span></p>
+				<p>Granularity: <span>{ granularity }</span></p>
+				<p>Depth: <span>{ depth }</span></p>
+			</div>
+			<br />
 			{ ( loading || !version ) ? 
 				<div className="loader">
 					<FontAwesomeIcon icon={ faSpinner } spin size="3x" />
 				</div>
 				:
 				<>
-					{ !_.isEmpty( filteredPredictions ) ? 
+					{ !_.isEmpty( predictions ) ? 
 						<>
-							{ prediction_type === "absolute" && <Absolute data={ filteredPredictions } /> }
-							{ prediction_type === "change" && <Change data={ filteredPredictions } /> }
+							{ prediction_type === "absolute" && <Absolute data={ predictions } /> }
+							{ prediction_type === "change" && <Change data={ predictions } /> }
 						</>
 						:
 						<p>Nothing to display - change a filter!</p>
