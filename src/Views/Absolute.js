@@ -156,7 +156,7 @@ DistributionChart.propTypes = {
 };
 
 const Stats = memo( function Stats ({ data }) {
-	const [ threshold, setThreshold ] = useState( 10 );
+	const [ threshold, setThreshold ] = useState( 100 );
 	const sampleCount = _.size( data );
 	
 	const differences = _.map( data, ({ actual, prediction, close }) => ({ actual: Number(( actual - close ).toFixed( 4 )), prediction: Number(( prediction - close ).toFixed( 4 )) }));
@@ -219,11 +219,11 @@ const Stats = memo( function Stats ({ data }) {
 				<tbody>
 					<tr>
 						<td>Actuals Standard Dev:</td>
-						<td>{ actualStDev.toFixed( 3 ) }</td>
+						<td>{ actualStDev.toFixed( 5 ) }</td>
 					</tr>
 					<tr>
 						<td>Difference Threshold:</td>
-						<td>{ threshStDev.toFixed( 3 ) }</td>
+						<td>{ threshStDev.toFixed( 5 ) }</td>
 					</tr>
 				</tbody>
 			</table>
