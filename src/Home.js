@@ -7,6 +7,7 @@ import _ from "lodash";
 import gql from "graphql-tag";
 import Absolute from "./Views/Absolute";
 import Change from "./Views/Change";
+import Highs from "./Views/Highs";
 
 const GET_VERSIONS = gql`
 query GetVersions {
@@ -33,7 +34,7 @@ query GetPredictions ( $version: Int!, $was_back_predicted: [Boolean!], $start_t
 export default function Home () {
 	const [ version, setVersion ] = useState({});
 	const [ includeBackPredicted, setIncludeBackPredicted ] = useState( true );
-	const [ daysBack, setDaysBack ] = useState( 7 );
+	const [ daysBack, setDaysBack ] = useState( 0 );
 	const start_time = daysBack === 0 ? new Date( 0 ).toISOString() : new Date( Date.now() - ( 1000 * 60 * 60 * 24 * daysBack )).toISOString();
     
 	const { data: versionsData } = useQuery( GET_VERSIONS );
@@ -90,6 +91,7 @@ export default function Home () {
 						<>
 							{ prediction_type === "absolute" && <Absolute data={ predictions } /> }
 							{ prediction_type === "change" && <Change data={ predictions } /> }
+							{ prediction_type === "highs" && <Highs data={ predictions } /> }
 						</>
 						:
 						<p>Nothing to display - change a filter!</p>

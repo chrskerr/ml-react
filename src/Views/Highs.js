@@ -1,5 +1,5 @@
 
-import React, { memo, useState } from "react";
+import React, { memo } from "react";
 import PropTypes from "proptypes";
 import _ from "lodash";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
@@ -156,7 +156,7 @@ DistributionChart.propTypes = {
 };
 
 const Stats = memo( function Stats ({ data }) {
-	const [ threshold, setThreshold ] = useState( 100 );
+	// const [ threshold, setThreshold ] = useState( 100 );
 	const sampleCount = _.size( data );
 	
 	const differences = _.map( data, ({ actual, prediction, close }) => ({ 
@@ -165,29 +165,29 @@ const Stats = memo( function Stats ({ data }) {
 		accuracy: Number(( prediction - actual ).toFixed( 5 )),
 	}));
 	
-	const actuals = _.map( differences, "actual" );
-	const actualStDev = standardDeviation( actuals );
-	const threshStDev = threshold >= 0 ? actualStDev * threshold / 100 : actualStDev;
-	const actualsStDev = threshStDev;
-	const negActualsStDev = -1 * threshStDev;
+	// const actuals = _.map( differences, "actual" );
+	// const actualStDev = standardDeviation( actuals );
+	// const threshStDev = threshold >= 0 ? actualStDev * threshold / 100 : actualStDev;
+	// const actualsStDev = threshStDev;
+	// const negActualsStDev = -1 * threshStDev;
 
-	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction > actualsStDev ));
-	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
-	const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction < negActualsStDev ));
-	const upATotal = _.size( _.filter( differences, ({ actual }) => actual > actualsStDev ));
-	const upPTotal = _.size( _.filter( differences, ({ prediction }) => prediction > actualsStDev ));
+	// const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction > actualsStDev ));
+	// const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	// const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction < negActualsStDev ));
+	// const upATotal = _.size( _.filter( differences, ({ actual }) => actual > actualsStDev ));
+	// const upPTotal = _.size( _.filter( differences, ({ prediction }) => prediction > actualsStDev ));
 	
-	const flatAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction > actualsStDev ));
-	const flatAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
-	const flatADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction < negActualsStDev ));
-	const flatATotal = _.size( _.filter( differences, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev ));
-	const flatPTotal = _.size( _.filter( differences, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev ));
+	// const flatAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction > actualsStDev ));
+	// const flatAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	// const flatADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction < negActualsStDev ));
+	// const flatATotal = _.size( _.filter( differences, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev ));
+	// const flatPTotal = _.size( _.filter( differences, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev ));
 	
-	const downAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction > actualsStDev ));
-	const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
-	const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction < negActualsStDev ));
-	const downATotal = _.size( _.filter( differences, ({ actual }) => actual < negActualsStDev ));
-	const downPTotal = _.size( _.filter( differences, ({ prediction }) => prediction < negActualsStDev ));
+	// const downAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction > actualsStDev ));
+	// const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
+	// const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction < negActualsStDev ));
+	// const downATotal = _.size( _.filter( differences, ({ actual }) => actual < negActualsStDev ));
+	// const downPTotal = _.size( _.filter( differences, ({ prediction }) => prediction < negActualsStDev ));
 
 	const accuracy = _.map( differences, "accuracy" );
 	const accuracyMean = mean( accuracy );
@@ -212,7 +212,7 @@ const Stats = memo( function Stats ({ data }) {
 					</tr>
 				</tbody>
 			</table>
-			<br />
+			{/* <br />
 			<div className="options">
 				<div>
 					<p>Set difference threshold percent:</p>
@@ -273,7 +273,7 @@ const Stats = memo( function Stats ({ data }) {
 					</tr>
 				</tbody>
 			</table>
-			<p>% are of number of predictions per the actual, so accuracy in that actual direction</p>
+			<p>% are of number of predictions per the actual, so accuracy in that actual direction</p> */}
 		</>
 	);
 });
