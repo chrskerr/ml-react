@@ -5,12 +5,12 @@ import _ from "lodash";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
 import { min, max, mean, standardDeviation } from "simple-statistics";
 
-export default function Absolute ({ data }) {    
+export default function Absolute ({ data, constants }) {    
 	return (
 		<div className="charts absolute">
 			<hr />
 			<div className="stats">
-				<Stats data={ data } />
+				<Stats data={ data } constants={ constants } />
 			</div>
 			<hr />
 			<div className="distribution">
@@ -30,6 +30,7 @@ export default function Absolute ({ data }) {
 }
 Absolute.propTypes = {
 	data: PropTypes.array,
+	constants: PropTypes.object,
 };
 
 const DotChartPrice = memo( function DotChartPrice ({ data }) {
@@ -71,8 +72,8 @@ DotChartPrice.propTypes = {
 
 const DotChartDifference = memo( function DotChartDifference ({ data }) {
 	const graphData = _.map( data, ({ actual, prediction, close }) => ({ actual: Number(( actual - close ).toFixed( 4 )), prediction: Number(( prediction - close ).toFixed( 4 )), z: 1 }));
-	const actualsStDev = standardDeviation( _.map( graphData, "actual" ));
-	const negActualsStDev = actualsStDev * -1;
+	const posTradeThreshold = standardDeviation( _.map( graphData, "actual" ));
+	const negTradeThreshold = posTradeThreshold * -1;
 	
 	const largestVal = _.reduce( graphData, ( total, current ) => {
 		const actual = _.get( current, "actual" );
@@ -99,10 +100,10 @@ const DotChartDifference = memo( function DotChartDifference ({ data }) {
 					<ZAxis dataKey="z" range={[ 1, 10 ]} />
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
 					<Scatter data={ graphData } fill="#82ca9d" shape="circle" line={{ stroke: "#e16162", strokeWidth: 2 }} lineType="fitting" />
-					<ReferenceLine x={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
-					<ReferenceLine x={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
-					<ReferenceLine y={ actualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideTopLeft" }} />
-					<ReferenceLine y={ negActualsStDev } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideTopLeft" }} /> 
+					<ReferenceLine x={ posTradeThreshold } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideBottomRight" }} />
+					<ReferenceLine x={ negTradeThreshold } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideBottomRight" }} />
+					<ReferenceLine y={ posTradeThreshold } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "+ σ", position: "insideTopLeft" }} />
+					<ReferenceLine y={ negTradeThreshold } stroke="#C98BBE" strokeDasharray="3 6" label={{ value: "- σ", position: "insideTopLeft" }} /> 
 				</ScatterChart>
 			</ResponsiveContainer>
 		</>
@@ -119,7 +120,7 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 	const range = 2 * max([ 0 - min( variations ), max( variations ) ]);
 	const intervalLength = range / numberOfIntervals; 
 	const sampleMean = mean( variations );
-	const actualsStDev = standardDeviation( variations );
+	const posTradeThreshold = standardDeviation( variations );
 	const start = range / 2 * -1;
 
 	const graphData = _.map( _.range( 0, numberOfIntervals + 1 ), i => {
@@ -130,8 +131,8 @@ const DistributionChart = memo( function DistributionChart ({ data }) {
 		return { name: middle, value: _.size( matchedVariations ), size: 0 };
 	});
 	
-	const positiveStDevLineX = sampleMean + actualsStDev;
-	const negativeStDevLineX = sampleMean - actualsStDev;
+	const positiveStDevLineX = sampleMean + posTradeThreshold;
+	const negativeStDevLineX = sampleMean - posTradeThreshold;
 		
 	return (
 		<>
@@ -155,43 +156,43 @@ DistributionChart.propTypes = {
 	data: PropTypes.array,
 };
 
-const Stats = memo( function Stats ({ data }) {
+const Stats = memo( function Stats ({ data, constants }) {
 	const [ threshold, setThreshold ] = useState( 100 );
+	const [ spread, setSpread ] = useState( _.get( constants, "spread" ));
+	const [ avgRange, setAvgRange ] = useState( _.get( constants, "avgRange" ));
 	const sampleCount = _.size( data );
-	
-	const differences = _.map( data, ({ actual, prediction, close }) => ({ 
+    	
+	const differences = _.map( data, ({ actual, prediction, close, id }) => ({ 
 		actual: Number(( actual - close ).toFixed( 5 )),
 		prediction: Number(( prediction - close ).toFixed( 5 )),
 		accuracy: Number(( prediction - actual ).toFixed( 5 )),
+		id, close,
 	}));
-	
-	const actuals = _.map( differences, "actual" );
-	const actualStDev = standardDeviation( actuals );
-	const threshStDev = threshold >= 0 ? actualStDev * threshold / 100 : actualStDev;
-	const actualsStDev = threshStDev;
-	const negActualsStDev = -1 * threshStDev;
-
-	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction > actualsStDev ));
-	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
-	const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > actualsStDev && prediction < negActualsStDev ));
-	const upATotal = _.size( _.filter( differences, ({ actual }) => actual > actualsStDev ));
-	const upPTotal = _.size( _.filter( differences, ({ prediction }) => prediction > actualsStDev ));
-	
-	const flatAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction > actualsStDev ));
-	const flatAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
-	const flatADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negActualsStDev && actual <= actualsStDev && prediction < negActualsStDev ));
-	const flatATotal = _.size( _.filter( differences, ({ actual }) => actual >= negActualsStDev && actual <= actualsStDev ));
-	const flatPTotal = _.size( _.filter( differences, ({ prediction }) => prediction >= negActualsStDev && prediction <= actualsStDev ));
-	
-	const downAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction > actualsStDev ));
-	const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction >= negActualsStDev && prediction <= actualsStDev ));
-	const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negActualsStDev && prediction < negActualsStDev ));
-	const downATotal = _.size( _.filter( differences, ({ actual }) => actual < negActualsStDev ));
-	const downPTotal = _.size( _.filter( differences, ({ prediction }) => prediction < negActualsStDev ));
-
+    
 	const accuracy = _.map( differences, "accuracy" );
 	const accuracyMean = mean( accuracy );
 	const accuracyStandardDev = standardDeviation( accuracy );
+    
+	const posTradeThreshold = ( accuracyStandardDev * threshold / 100 )+ spread;
+	const negTradeThreshold = -1 * posTradeThreshold;
+
+	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > posTradeThreshold && prediction > posTradeThreshold ));
+	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > posTradeThreshold && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
+	const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > posTradeThreshold && prediction < negTradeThreshold ));
+	const upATotal = _.size( _.filter( differences, ({ actual }) => actual > posTradeThreshold ));
+	const upPTotal = _.size( _.filter( differences, ({ prediction }) => prediction > posTradeThreshold ));
+	
+	const flatAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negTradeThreshold && actual <= posTradeThreshold && prediction > posTradeThreshold ));
+	const flatAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negTradeThreshold && actual <= posTradeThreshold && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
+	const flatADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negTradeThreshold && actual <= posTradeThreshold && prediction < negTradeThreshold ));
+	const flatATotal = _.size( _.filter( differences, ({ actual }) => actual >= negTradeThreshold && actual <= posTradeThreshold ));
+	const flatPTotal = _.size( _.filter( differences, ({ prediction }) => prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
+	
+	const downAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negTradeThreshold && prediction > posTradeThreshold ));
+	const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negTradeThreshold && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
+	const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negTradeThreshold && prediction < negTradeThreshold ));
+	const downATotal = _.size( _.filter( differences, ({ actual }) => actual < negTradeThreshold ));
+	const downPTotal = _.size( _.filter( differences, ({ prediction }) => prediction < negTradeThreshold ));
 
 	return (
 		<>
@@ -215,19 +216,27 @@ const Stats = memo( function Stats ({ data }) {
 			<br />
 			<div className="options">
 				<div>
-					<p>Set difference threshold percent:</p>
+					<p>Modelling true range:</p>
+					<input type="number" onChange={ e => setAvgRange( Number( e.target.value ))} value={ avgRange } min={ 0 } />
+				</div>
+				<div>
+					<p>Modelling spread:</p>
+					<input type="number" onChange={ e => setSpread( Number( e.target.value ))} value={ spread } min={ 0 } />
+				</div>
+				<div>
+					<p>Modelling % of accuracy Standard Deviation:</p>
 					<input type="number" onChange={ e => setThreshold( Number( e.target.value ))} value={ threshold } min={ 0 } />
 				</div>
 			</div>
 			<table>
 				<tbody>
 					<tr>
-						<td>Actual minus Close - Standard Dev:</td>
-						<td>{ actualStDev.toFixed( 5 ) }</td>
+						<td>Total threshold to trade:</td>
+						<td>{ posTradeThreshold.toFixed( 5 ) }</td>
 					</tr>
 					<tr>
-						<td>Actual minus Close Threshold:</td>
-						<td>{ threshStDev.toFixed( 5 ) }</td>
+						<td>Threshold % of True Range:</td>
+						<td>{ ( posTradeThreshold / avgRange * 100 ).toFixed( 2 ) }</td>
 					</tr>
 				</tbody>
 			</table>
@@ -279,4 +288,5 @@ const Stats = memo( function Stats ({ data }) {
 });
 Stats.propTypes = {
 	data: PropTypes.array,
+	constants: PropTypes.object,
 };

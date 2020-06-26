@@ -12,14 +12,14 @@ import Highs from "./Views/Highs";
 const GET_VERSIONS = gql`
 query GetVersions {
     versions ( order_by: { id: asc } ) { id prediction_type instrument depth granularity }
-}
-`;
+}`;
 
 const GET_PREDICTIONS = gql`
 query GetPredictions ( $version: Int!, $was_back_predicted: [Boolean!], $start_time: timestamptz! ) {
     predictions ( where: { 
         prediction: { _is_null: false }, 
         actual: { _is_null: false }, 
+        close: { _is_null: false }, 
         _version: { _eq: $version }, 
         was_back_predicted: { _in: $was_back_predicted },
         time: { _gte: $start_time }
@@ -30,6 +30,19 @@ query GetPredictions ( $version: Int!, $was_back_predicted: [Boolean!], $start_t
         close
     }
 }`;
+
+const constantsMap = {
+	"GBP_JPY": {
+		"M15": {
+			spread: 0.015,
+			avgRange: 0.1,
+		},
+	},
+	"EUR_USD": {
+		spread: 0.2,
+		avgRange: 0.3,
+	},
+};
 
 export default function Home () {
 	const [ version, setVersion ] = useState({});
@@ -47,6 +60,7 @@ export default function Home () {
 	const instrument = _.get( version, "instrument" );
 	const granularity = _.get( version, "granularity" );
 	const depth = _.get( version, "depth" );
+	const constants = _.get( constantsMap, [ instrument, granularity ], {});
 
 	// eslint-disable-next-line
 	useEffect(() => { if ( _.isEmpty( version ) && !_.isEmpty( versions )) setVersion( _.last( versions )); }, [ versions ]);
@@ -89,9 +103,9 @@ export default function Home () {
 				<>
 					{ !_.isEmpty( predictions ) ? 
 						<>
-							{ prediction_type === "absolute" && <Absolute data={ predictions } /> }
-							{ prediction_type === "change" && <Change data={ predictions } /> }
-							{ prediction_type === "highs" && <Highs data={ predictions } /> }
+							{ prediction_type === "absolute" && <Absolute data={ predictions } constants={ constants } /> }
+							{ prediction_type === "change" && <Change data={ predictions } constants={ constants } /> }
+							{ prediction_type === "highs" && <Highs data={ predictions } constants={ constants } /> }
 						</>
 						:
 						<p>Nothing to display - change a filter!</p>
