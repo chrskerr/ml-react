@@ -39,8 +39,16 @@ const constantsMap = {
 		},
 	},
 	"EUR_USD": {
-		spread: 0.2,
-		avgRange: 0.3,
+		"M30": {
+			spread: 0.2,
+			avgRange: 0.3,
+		},
+	},
+	"XAU_USD": {
+		"M30": {
+			spread: 0.65,
+			avgRange: 3,
+		},
 	},
 };
 
