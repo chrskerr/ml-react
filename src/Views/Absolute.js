@@ -176,22 +176,16 @@ const Stats = memo( function Stats ({ data, constants }) {
 	const posTradeThreshold = ( accuracyStandardDev * threshold / 100 )+ spread;
 	const negTradeThreshold = -1 * posTradeThreshold;
 
-	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > posTradeThreshold && prediction > posTradeThreshold ));
-	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > posTradeThreshold && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
-	const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > posTradeThreshold && prediction < negTradeThreshold ));
-	const upATotal = _.size( _.filter( differences, ({ actual }) => actual > posTradeThreshold ));
+	const upAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual > spread && prediction > posTradeThreshold ));
+	const upAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual > 0 && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
+	const upADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual > spread * -1 && prediction < negTradeThreshold ));
 	const upPTotal = _.size( _.filter( differences, ({ prediction }) => prediction > posTradeThreshold ));
 	
-	const flatAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negTradeThreshold && actual <= posTradeThreshold && prediction > posTradeThreshold ));
-	const flatAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negTradeThreshold && actual <= posTradeThreshold && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
-	const flatADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual >= negTradeThreshold && actual <= posTradeThreshold && prediction < negTradeThreshold ));
-	const flatATotal = _.size( _.filter( differences, ({ actual }) => actual >= negTradeThreshold && actual <= posTradeThreshold ));
 	const flatPTotal = _.size( _.filter( differences, ({ prediction }) => prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
 	
-	const downAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negTradeThreshold && prediction > posTradeThreshold ));
-	const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negTradeThreshold && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
-	const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < negTradeThreshold && prediction < negTradeThreshold ));
-	const downATotal = _.size( _.filter( differences, ({ actual }) => actual < negTradeThreshold ));
+	const downAUpP = _.size( _.filter( differences, ({ actual, prediction }) => actual < spread && prediction > posTradeThreshold ));
+	const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < 0 && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
+	const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < spread * -1 && prediction < negTradeThreshold ));
 	const downPTotal = _.size( _.filter( differences, ({ prediction }) => prediction < negTradeThreshold ));
 
 	return (
@@ -245,10 +239,9 @@ const Stats = memo( function Stats ({ data, constants }) {
 				<thead>
 					<tr>
 						<th></th>
-						<th>Prediction Up</th>
-						<th>Prediction Flat</th>
-						<th>Prediction Down</th>
-						<th>Total</th>
+						<th>Prediction: Up</th>
+						<th>Prediction: None</th>
+						<th>Prediction: Down</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -257,32 +250,22 @@ const Stats = memo( function Stats ({ data, constants }) {
 						<td>{ upAUpP } / { ( upAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
 						<td>{ upAFlatP } / { ( upAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
 						<td>{ upADownP } / { ( upADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
-						<td>{ upATotal }</td>
-					</tr>
-					<tr>
-						<th>Actual Flat</th>
-						<td>{ flatAUpP } / { ( flatAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
-						<td>{ flatAFlatP } / { ( flatAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
-						<td>{ flatADownP } / { ( flatADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
-						<td>{ flatATotal }</td>
 					</tr>
 					<tr>
 						<th>Actual Down</th>
 						<td>{ downAUpP } / { ( downAUpP / upPTotal * 100 ).toFixed( 1 ) }%</td>
 						<td>{ downAFlatP } / { ( downAFlatP / flatPTotal * 100 ).toFixed( 1 ) }%</td>
 						<td>{ downADownP } / { ( downADownP / downPTotal * 100 ).toFixed( 1 ) }%</td>
-						<td>{ downATotal }</td>
 					</tr>
 					<tr>
 						<th>Total</th>
 						<td>{ upPTotal }</td>
 						<td>{ flatPTotal }</td>
 						<td>{ downPTotal }</td>
-						<td>{ upATotal + flatATotal + downATotal } / { upPTotal + flatPTotal + downPTotal }</td>
 					</tr>
 				</tbody>
 			</table>
-			<p>% are of number of predictions per the actual, so accuracy in that actual direction</p>
+			<p>% are of number of predictions per the actual, against the spread. So for if the bar actually exceeded spread in the direction of prediction.</p>
 		</>
 	);
 });

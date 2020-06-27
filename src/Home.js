@@ -50,6 +50,12 @@ const constantsMap = {
 			avgRange: 3,
 		},
 	},
+	"MBTC_USD": {
+		"M15": {
+			spread: 0.45,
+			avgRange: 0.4,
+		},
+	},
 };
 
 export default function Home () {
