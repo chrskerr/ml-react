@@ -41,11 +41,11 @@ const constantsMap = {
 	"EUR_USD": {
 		"M30": {
 			spread: 0.00005,
-			avgRange: 0.3,
+			avgRange: 0.003,
 		},
 		"H1": {
 			spread: 0.00005,
-			avgRange: 0.6,
+			avgRange: 0.015,
 		},
 		"M15": {
 			spread: 0.00005,
@@ -60,18 +60,24 @@ const constantsMap = {
 	},
 	"MBTC_USD": {
 		"M15": {
-			spread: 0.45,
+			spread: 0.6,
 			avgRange: 0.4,
 		},
 		"H1": {
-			spread: 0.45,
-			avgRange: 1.6,
+			spread: 0.6,
+			avgRange: 0.5,
 		},
 	},
 	"GBP_USD": {
 		"M15": {
 			spread: 0.0008,
 			avgRange: 0.001,
+		},
+	},
+	"AU200_AUD": {
+		"M5": {
+			avgRange: 5,
+			spread: 1,
 		},
 	},
 };
