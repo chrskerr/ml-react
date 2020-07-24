@@ -1,5 +1,5 @@
 
-import React, { memo, useState } from "react";
+import React, { memo, useState, useEffect } from "react";
 import PropTypes from "proptypes";
 import _ from "lodash";
 import { ResponsiveContainer, ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, Tooltip, ReferenceLine } from "recharts";
@@ -161,18 +161,23 @@ const Stats = memo( function Stats ({ data, constants }) {
 	const [ spread, setSpread ] = useState( _.get( constants, "spread" ));
 	const [ avgRange, setAvgRange ] = useState( _.get( constants, "avgRange" ));
 	const sampleCount = _.size( data );
-    	
+	
+	useEffect(() => {
+		setSpread( _.get( constants, "spread" ));
+		setAvgRange( _.get( constants, "avgRange" ));
+	}, [ constants ]);
+		
 	const differences = _.map( data, ({ actual, prediction, close, id }) => ({ 
 		actual: Number(( actual - close ).toFixed( 5 )),
 		prediction: Number(( prediction - close ).toFixed( 5 )),
 		accuracy: Number(( prediction - actual ).toFixed( 5 )),
 		id, close,
 	}));
-    
+	
 	const accuracy = _.map( differences, "accuracy" );
 	const accuracyMean = mean( accuracy );
 	const accuracyStandardDev = standardDeviation( accuracy );
-    
+	
 	const posTradeThreshold = ( accuracyStandardDev * threshold / 100 )+ spread;
 	const negTradeThreshold = -1 * posTradeThreshold;
 
