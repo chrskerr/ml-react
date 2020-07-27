@@ -172,7 +172,7 @@ const Stats = memo( function Stats ({ data, constants }) {
 		prediction: Number(( prediction - close ).toFixed( 5 )),
 		accuracy: Number(( prediction - actual ).toFixed( 5 )),
 		id, close,
-	}));
+    }));
 	
 	const accuracy = _.map( differences, "accuracy" );
 	const accuracyMean = mean( accuracy );
@@ -209,6 +209,14 @@ const Stats = memo( function Stats ({ data, constants }) {
 					<tr>
 						<td>Accuracy Standard Deviation:</td>
 						<td>{ ( accuracyStandardDev ).toFixed( 5 ) }</td>
+					</tr>
+					<tr>
+						<td>Spread on file:</td>
+						<td>{ _.get( constants, "spread", "none" ) }</td>
+					</tr>
+					<tr>
+						<td>True range on file:</td>
+						<td>{ _.get( constants, "avgRange", "none" ) }</td>
 					</tr>
 				</tbody>
 			</table>
