@@ -27,7 +27,7 @@ query GetPredictions ( $version: Int!, $was_back_predicted: [Boolean!], $start_t
         actual id time
         prediction
         _version
-        close
+        close ma100
     }
 }`;
 
@@ -46,6 +46,10 @@ const constantsMap = {
 		"H1": {
 			spread: 0.00005,
 			avgRange: 0.015,
+		},
+		"H4": {
+			spread: 0.00005,
+			avgRange: 0.06,
 		},
 		"M15": {
 			spread: 0.00005,

@@ -172,7 +172,7 @@ const Stats = memo( function Stats ({ data, constants }) {
 		prediction: Number(( prediction - close ).toFixed( 5 )),
 		accuracy: Number(( prediction - actual ).toFixed( 5 )),
 		id, close,
-    }));
+	}));
 	
 	const accuracy = _.map( differences, "accuracy" );
 	const accuracyMean = mean( accuracy );
@@ -192,6 +192,32 @@ const Stats = memo( function Stats ({ data, constants }) {
 	const downAFlatP = _.size( _.filter( differences, ({ actual, prediction }) => actual < 0 && prediction >= negTradeThreshold && prediction <= posTradeThreshold ));
 	const downADownP = _.size( _.filter( differences, ({ actual, prediction }) => actual < spread * -1 && prediction < negTradeThreshold ));
 	const downPTotal = _.size( _.filter( differences, ({ prediction }) => prediction < negTradeThreshold ));
+    
+    
+	const upAUpPUpTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual > spread && prediction > posTradeThreshold && ma100 && close > ma100 ));
+	const upAFlatPUpTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual > 0 && prediction >= negTradeThreshold && prediction <= posTradeThreshold && ma100 && close > ma100 ));
+	const upADownPUpTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual > spread * -1 && prediction < negTradeThreshold && ma100 && close > ma100 ));
+	const upPTotalUpTrend = _.size( _.filter( differences, ({ prediction, ma100, close }) => prediction > posTradeThreshold && ma100 && close > ma100 ));
+	
+	const flatPTotalUpTrend = _.size( _.filter( differences, ({ prediction, ma100, close }) => prediction >= negTradeThreshold && prediction <= posTradeThreshold && ma100 && close > ma100 ));
+	
+	const downAUpPUpTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual < spread && prediction > posTradeThreshold && ma100 && close > ma100 ));
+	const downAFlatPUpTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual < 0 && prediction >= negTradeThreshold && prediction <= posTradeThreshold && ma100 && close > ma100 ));
+	const downADownPUpTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual < spread * -1 && prediction < negTradeThreshold && ma100 && close > ma100 ));
+	const downPTotalUpTrend = _.size( _.filter( differences, ({ prediction, ma100, close }) => prediction < negTradeThreshold && ma100 && close > ma100 ));
+    
+    
+	const upAUpPDownTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual > spread && prediction > posTradeThreshold && ma100 && close < ma100 ));
+	const upAFlatPDownTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual > 0 && prediction >= negTradeThreshold && prediction <= posTradeThreshold && ma100 && close < ma100 ));
+	const upADownPDownTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual > spread * -1 && prediction < negTradeThreshold && ma100 && close < ma100 ));
+	const upPTotalDownTrend = _.size( _.filter( differences, ({ prediction, ma100, close }) => prediction > posTradeThreshold && ma100 && close < ma100 ));
+	
+	const flatPTotalDownTrend = _.size( _.filter( differences, ({ prediction, ma100, close }) => prediction >= negTradeThreshold && prediction <= posTradeThreshold && ma100 && close < ma100 ));
+	
+	const downAUpPDownTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual < spread && prediction > posTradeThreshold && ma100 && close < ma100 ));
+	const downAFlatPDownTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual < 0 && prediction >= negTradeThreshold && prediction <= posTradeThreshold && ma100 && close < ma100 ));
+	const downADownPDownTrend = _.size( _.filter( differences, ({ actual, prediction, ma100, close }) => actual < spread * -1 && prediction < negTradeThreshold && ma100 && close < ma100 ));
+	const downPTotalDownTrend = _.size( _.filter( differences, ({ prediction, ma100, close }) => prediction < negTradeThreshold && ma100 && close < ma100 ));
 
 	return (
 		<>
@@ -251,7 +277,7 @@ const Stats = memo( function Stats ({ data, constants }) {
 			<table className="comparison-table">
 				<thead>
 					<tr>
-						<th></th>
+						<th>No trend</th>
 						<th>Prediction: Up</th>
 						<th>Prediction: None</th>
 						<th>Prediction: Down</th>
@@ -278,7 +304,68 @@ const Stats = memo( function Stats ({ data, constants }) {
 					</tr>
 				</tbody>
 			</table>
-			<p>% are of number of predictions per the actual, against the spread. So for if the bar actually exceeded spread in the direction of prediction.</p>
+			<br />
+			<table className="comparison-table">
+				<thead>
+					<tr>
+						<th>Up Trend</th>
+						<th>Prediction: Up</th>
+						<th>Prediction: None</th>
+						<th>Prediction: Down</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th>Actual Up</th>
+						<td>{ upAUpPUpTrend } / { ( upAUpPUpTrend / upPTotalUpTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upAFlatPUpTrend } / { ( upAFlatPUpTrend / flatPTotalUpTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upADownPUpTrend } / { ( upADownPUpTrend / downPTotalUpTrend * 100 ).toFixed( 1 ) }%</td>
+					</tr>
+					<tr>
+						<th>Actual Down</th>
+						<td>{ downAUpPUpTrend } / { ( downAUpPUpTrend / upPTotalUpTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downAFlatPUpTrend } / { ( downAFlatPUpTrend / flatPTotalUpTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downADownPUpTrend } / { ( downADownPUpTrend / downPTotalUpTrend * 100 ).toFixed( 1 ) }%</td>
+					</tr>
+					<tr>
+						<th>Total</th>
+						<td>{ upPTotalUpTrend }</td>
+						<td>{ flatPTotalUpTrend }</td>
+						<td>{ downPTotalUpTrend }</td>
+					</tr>
+				</tbody>
+			</table>
+			<br />
+			<table className="comparison-table">
+				<thead>
+					<tr>
+						<th>Down Trend</th>
+						<th>Prediction: Up</th>
+						<th>Prediction: None</th>
+						<th>Prediction: Down</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<th>Actual Up</th>
+						<td>{ upAUpPDownTrend } / { ( upAUpPDownTrend / upPTotalDownTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upAFlatPDownTrend } / { ( upAFlatPDownTrend / flatPTotalDownTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ upADownPDownTrend } / { ( upADownPDownTrend / downPTotalDownTrend * 100 ).toFixed( 1 ) }%</td>
+					</tr>
+					<tr>
+						<th>Actual Down</th>
+						<td>{ downAUpPDownTrend } / { ( downAUpPDownTrend / upPTotalDownTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downAFlatPDownTrend } / { ( downAFlatPDownTrend / flatPTotalDownTrend * 100 ).toFixed( 1 ) }%</td>
+						<td>{ downADownPDownTrend } / { ( downADownPDownTrend / downPTotalDownTrend * 100 ).toFixed( 1 ) }%</td>
+					</tr>
+					<tr>
+						<th>Total</th>
+						<td>{ upPTotalDownTrend }</td>
+						<td>{ flatPTotalDownTrend }</td>
+						<td>{ downPTotalDownTrend }</td>
+					</tr>
+				</tbody>
+			</table>
 		</>
 	);
 });
