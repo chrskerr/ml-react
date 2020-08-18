@@ -38,6 +38,12 @@ const constantsMap = {
 			avgRange: 0.1,
 		},
 	},
+	"USD_JPY": {
+		"M30": {
+			spread: 0.008,
+			avgRange: 0.5,
+		},
+	},
 	"EUR_USD": {
 		"M30": {
 			spread: 0.00005,

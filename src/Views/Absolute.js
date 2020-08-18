@@ -167,11 +167,11 @@ const Stats = memo( function Stats ({ data, constants }) {
 		setAvgRange( _.get( constants, "avgRange" ));
 	}, [ constants ]);
 		
-	const differences = _.map( data, ({ actual, prediction, close, id }) => ({ 
+	const differences = _.map( data, ({ actual, prediction, close, id, ma100 }) => ({ 
 		actual: Number(( actual - close ).toFixed( 5 )),
 		prediction: Number(( prediction - close ).toFixed( 5 )),
 		accuracy: Number(( prediction - actual ).toFixed( 5 )),
-		id, close,
+		id, close, ma100,
 	}));
 	
 	const accuracy = _.map( differences, "accuracy" );
